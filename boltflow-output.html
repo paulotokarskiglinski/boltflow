@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>⚡ Boltflow — demo-app-21-v2</title>
+<!-- importing css -->
+<style>*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0
+}
+
+:root {
+  --bg: #0a0a0a;
+  --surface: #19191a;
+  --surface2: #2a2a2a;
+  --border: #363636;
+  --text: #E2E8F0;
+  --text-muted: #94A3B8;
+  --accent: #38BDF8;
+  --c-root: #7C3AED;
+  --c-root-b: #6D28D9;
+  --c-comp: #059669;
+  --c-comp-b: #047857;
+  --c-module: #D97706;
+  --c-module-b: #B45309;
+  --c-lazy: #64748B;
+  --c-lazy-b: #475569;
+  --c-service: #0891B2;
+  --c-service-b: #0E7490;
+  --c-directive: #4F46E5;
+  --c-directive-b: #4338CA;
+  --c-pipe: #DB2777;
+  --c-pipe-b: #BE185D;
+  --e-uses: #94A3B8;
+  --e-route: #3B82F6;
+  --e-child: #60A5FA;
+  --e-lazy: #FBBF24;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden
+}
+
+/* ── header ── */
+header {
+  height: 52px;
+  min-height: 52px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+  z-index: 10
+}
+
+.logo {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--accent);
+  letter-spacing: -.02em;
+  white-space: nowrap
+}
+
+.logo span {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: .85rem;
+  margin-left: 8px
+}
+
+.badge {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  padding: 2px 10px;
+  font-size: .75rem;
+  color: var(--text-muted);
+  white-space: nowrap
+}
+
+.spacer {
+  flex: 1
+}
+
+.theme-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: .8rem
+}
+
+.theme-btn:hover {
+  background: var(--surface2)
+}
+
+/* ── layout ── */
+.workspace {
+  flex: 1;
+  display: flex;
+  overflow: hidden
+}
+
+/* ── sidebar ── */
+.sidebar {
+  width: 260px;
+  min-width: 260px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden
+}
+
+.sidebar-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border)
+}
+
+.search-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: .82rem;
+  outline: none
+}
+
+.search-input::placeholder {
+  color: var(--text-muted)
+}
+
+.search-input:focus {
+  border-color: var(--accent)
+}
+
+.filter-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap
+}
+
+.filter-chip {
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  padding: 2px 9px;
+  font-size: .72rem;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-muted);
+  transition: all .15s
+}
+
+.filter-chip.active {
+  color: #fff
+}
+
+.filter-chip[data-type="root"].active {
+  background: var(--c-root);
+  border-color: var(--c-root)
+}
+
+.filter-chip[data-type="component"].active {
+  background: var(--c-comp);
+  border-color: var(--c-comp)
+}
+
+.filter-chip[data-type="module"].active {
+  background: var(--c-module);
+  border-color: var(--c-module)
+}
+
+.filter-chip[data-type="lazy-module"].active {
+  background: var(--c-lazy);
+  border-color: var(--c-lazy)
+}
+
+.filter-chip[data-type="service"].active {
+  background: var(--c-service);
+  border-color: var(--c-service)
+}
+
+.filter-chip[data-type="directive"].active {
+  background: var(--c-directive);
+  border-color: var(--c-directive)
+}
+
+.filter-chip[data-type="pipe"].active {
+  background: var(--c-pipe);
+  border-color: var(--c-pipe)
+}
+
+.comp-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0
+}
+
+.comp-item {
+  padding: 7px 14px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background .1s
+}
+
+.comp-item:hover {
+  background: var(--surface2)
+}
+
+.comp-item.selected {
+  background: var(--surface2);
+  border-left-color: var(--accent)
+}
+
+.comp-item-name {
+  font-size: .83rem;
+  font-weight: 500
+}
+
+.comp-item-meta {
+  font-size: .72rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis
+}
+
+.type-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle
+}
+
+/* ── canvas ── */
+.canvas-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg)
+}
+
+#graph {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab
+}
+
+#graph.panning {
+  cursor: grabbing
+}
+
+.zoom-btns {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px
+}
+
+.zoom-btns button {
+  width: 32px;
+  height: 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center
+}
+
+.zoom-btns button:hover {
+  background: var(--surface2);
+  color: var(--accent)
+}
+
+/* ── detail panel ── */
+.detail-panel {
+  width: 280px;
+  min-width: 280px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width .2s
+}
+
+.detail-panel.hidden {
+  width: 0;
+  min-width: 0;
+  border-left: none
+}
+
+.dp-header {
+  padding: 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center
+}
+
+.dp-title {
+  font-weight: 600;
+  font-size: .9rem
+}
+
+.dp-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 2px 6px;
+  border-radius: 4px
+}
+
+.dp-close:hover {
+  background: var(--surface2)
+}
+
+.dp-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px
+}
+
+.dp-section {
+  margin-bottom: 14px
+}
+
+.dp-section-title {
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-muted);
+  margin-bottom: 6px
+}
+
+.dp-row {
+  font-size: .8rem;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 4px
+}
+
+.dp-label {
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 70px
+}
+
+.dp-value {
+  color: var(--text);
+  word-break: break-all
+}
+
+.dp-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 9999px;
+  font-size: .7rem;
+  color: #fff;
+  margin: 1px 2px 1px 0
+}
+
+.dp-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: .72rem;
+  background: var(--surface2);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  margin: 2px 2px 0 0;
+  cursor: pointer
+}
+
+.dp-chip:hover {
+  color: var(--accent);
+  border-color: var(--accent)
+}
+
+.dp-filepath {
+  font-size: .72rem;
+  color: var(--text-muted);
+  font-family: monospace;
+  word-break: break-all;
+  background: var(--surface2);
+  padding: 5px 8px;
+  border-radius: 4px;
+  margin-top: 4px
+}
+
+.no-select {
+  font-size: .8rem;
+  color: var(--text-muted);
+  padding: 20px 14px;
+  text-align: center;
+  line-height: 1.6
+}
+
+/* ── legend ── */
+.legend {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: .72rem
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 4px;
+  color: var(--text-muted)
+}
+
+.legend-row:last-child {
+  margin-bottom: 0
+}
+
+.legend-line {
+  width: 24px;
+  height: 2px;
+  border-radius: 1px
+}
+
+.legend-dash {
+  width: 24px;
+  height: 0;
+  border-top: 2px dashed
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0
+}
+
+/* ── scrollbar ── */
+::-webkit-scrollbar {
+  width: 5px
+}
+
+::-webkit-scrollbar-track {
+  background: transparent
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px
+}
+
+/* ── light theme override ── */
+body.light {
+  --bg: #F1F5F9;
+  --surface: #FFFFFF;
+  --surface2: #F8FAFC;
+  --border: #E2E8F0;
+  --text: #1E293B;
+  --text-muted: #64748B;
+  --accent: #0284C7;
+}</style>
+</head>
+<body>
+<header>
+  <div class="logo">⚡ Boltflow <span id="proj-name"></span></div>
+  <div class="badge" id="badge-comps"></div>
+  <div class="badge" id="badge-routes"></div>
+  <div class="badge" id="badge-fw"></div>
+  <div class="spacer"></div>
+  <button class="theme-btn" id="routing-btn" title="Toggle edge routing style">⊢ Ortho</button>
+  <button class="theme-btn" id="theme-btn" title="Toggle light/dark theme">☀ Light</button>
+</header>
+<div class="workspace">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <input type="text" class="search-input" id="search" placeholder="Search components…" />
+      <div class="filter-row" id="filter-row"></div>
+    </div>
+    <div class="comp-list" id="comp-list"></div>
+  </aside>
+  <!-- SVG canvas -->
+  <div class="canvas-wrap">
+    <svg id="graph" xmlns="http://www.w3.org/2000/svg">
+      <defs id="svg-defs"></defs>
+      <rect id="bg" width="100%" height="100%" fill="transparent" />
+      <g id="viewport">
+        <g id="zones-group"></g>
+        <g id="edges-group"></g>
+        <g id="nodes-group"></g>
+      </g>
+    </svg>
+    <div class="zoom-btns">
+      <button id="btn-fit" title="Fit to screen">⊙</button>
+      <button id="btn-zoomin" title="Zoom in">+</button>
+      <button id="btn-zoomout" title="Zoom out">−</button>
+    </div>
+    <!-- Legend -->
+    <div class="legend" id="legend"></div>
+  </div>
+  <!-- Detail panel -->
+  <aside class="detail-panel hidden" id="detail-panel">
+    <div class="dp-header">
+      <span class="dp-title" id="dp-title">Component</span>
+      <button class="dp-close" id="dp-close" title="Close">✕</button>
+    </div>
+    <div class="dp-body" id="dp-body">
+      <p class="no-select">Click a node to see details</p>
+    </div>
+  </aside>
+</div>
+<!-- importing js -->
+<script>(function(){
+"use strict";
+// ════════════════════════════════════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════════════════════════════════════
+const GRAPH = {"nodes":[{"id":"cmp_1","label":"AppComponent","type":"root","filePath":"src/app/app.ts","selector":"app-root","inputs":[],"outputs":[],"isStandalone":true,"x":140,"y":513,"lane":"flow"},{"id":"cmp_2","label":"DashboardComponent","type":"component","filePath":"src/app/dashboard/dashboard.ts","selector":"app-dashboard","inputs":[{"name":"userId","type":"string","required":false},{"name":"showCharts","type":"boolean","required":false}],"outputs":[],"isStandalone":true,"x":420,"y":171,"route":"/dashboard","lane":"flow"},{"id":"cmp_3","label":"HelpComponent","type":"component","filePath":"src/app/help/help.ts","selector":"app-help","inputs":[],"outputs":[],"isStandalone":true,"x":420,"y":285,"route":"/help","lane":"flow"},{"id":"cmp_4","label":"HomeComponent","type":"component","filePath":"src/app/home/home.ts","selector":"app-home","inputs":[{"name":"title","type":"string","required":false}],"outputs":[{"name":"visited","type":"import(\"C:/Users/User/Projetos/demo-app-21-v2/node_modules/@angular/core/type…"}],"isStandalone":true,"x":420,"y":399,"route":"/","lane":"flow"},{"id":"cmp_5","label":"ProfileComponent","type":"component","filePath":"src/app/profile/profile.ts","selector":"app-profile","inputs":[{"name":"username","type":"string","required":false}],"outputs":[{"name":"logout","type":"import(\"C:/Users/User/Projetos/demo-app-21-v2/node_modules/@angular/core/type…"}],"isStandalone":true,"x":420,"y":513,"route":"/profile","lane":"flow"},{"id":"cmp_6","label":"AdminDashboardComponent","type":"component","filePath":"src/app/admin/admin-dashboard/admin-dashboard.ts","selector":"app-admin-dashboard","inputs":[{"name":"adminLevel","type":"number","required":false}],"outputs":[],"isStandalone":true,"x":420,"y":627,"route":"/","lane":"flow"},{"id":"cmp_7","label":"UsersComponent","type":"component","filePath":"src/app/admin/users/users.ts","selector":"app-users","inputs":[{"name":"users","type":"string[]","required":false}],"outputs":[],"isStandalone":true,"x":420,"y":741,"route":"/users","lane":"flow"},{"id":"cmp_8","label":"ChartsComponent","type":"component","filePath":"src/app/dashboard/charts/charts.ts","selector":"app-charts","inputs":[{"name":"chartType","type":"string","required":false}],"outputs":[{"name":"chartClick","type":"import(\"C:/Users/User/Projetos/demo-app-21-v2/node_modules/@angular/core/type…"}],"isStandalone":true,"x":700,"y":399,"route":"/dashboard/charts","lane":"flow"},{"id":"cmp_9","label":"StatsComponent","type":"component","filePath":"src/app/dashboard/stats/stats.ts","selector":"app-stats","inputs":[{"name":"data","type":"any[]","required":false}],"outputs":[],"isStandalone":true,"x":700,"y":513,"route":"/dashboard/stats","lane":"flow"},{"id":"cmp_10","label":"SettingsComponent","type":"component","filePath":"src/app/profile/settings/settings.ts","selector":"app-settings","inputs":[{"name":"theme","type":"\"dark\" | \"light\"","required":false}],"outputs":[],"isStandalone":true,"x":700,"y":627,"route":"/profile/settings","lane":"flow"},{"id":"cmp_11","label":"ButtonComponent","type":"component","filePath":"src/app/shared/button/button.ts","selector":"app-button","inputs":[{"name":"label","type":"string","required":false},{"name":"disabled","type":"boolean","required":false},{"name":"variant","type":"\"primary\" | \"secondary\"","required":false}],"outputs":[{"name":"clicked","type":"import(\"C:/Users/User/Projetos/demo-app-21-v2/node_modules/@angular/core/type…"}],"isStandalone":true,"x":140,"y":987,"lane":"shared"},{"id":"cmp_12","label":"CardComponent","type":"component","filePath":"src/app/shared/card/card.ts","selector":"app-card","inputs":[{"name":"title","type":"string","required":false},{"name":"subtitle","type":"string","required":false},{"name":"elevated","type":"boolean","required":false}],"outputs":[{"name":"cardClick","type":"import(\"C:/Users/User/Projetos/demo-app-21-v2/node_modules/@angular/core/type…"}],"isStandalone":true,"x":140,"y":1101,"lane":"shared"},{"id":"cmp_13","label":"ChartPlaceholderComponent","type":"component","filePath":"src/app/shared/chart-placeholder/chart-placeholder.ts","selector":"app-chart-placeholder","inputs":[{"name":"type","type":"string","required":false},{"name":"height","type":"number","required":false}],"outputs":[],"isStandalone":true,"x":140,"y":1215,"lane":"shared"},{"id":"svc_1","label":"AuthService","type":"service","filePath":"src/app/services/auth.service.ts","x":420,"y":987,"lane":"shared"},{"id":"svc_2","label":"ThemeService","type":"service","filePath":"src/app/services/theme.service.ts","x":420,"y":1101,"lane":"shared"},{"id":"svc_3","label":"UserService","type":"service","filePath":"src/app/services/user.service.ts","x":420,"y":1215,"lane":"shared"},{"id":"dir_1","label":"HighlightDirective","type":"directive","filePath":"src/app/shared/directives/highlight.directive.ts","selector":"[appHighlight]","x":700,"y":987,"lane":"shared"},{"id":"dir_2","label":"TooltipDirective","type":"directive","filePath":"src/app/shared/directives/tooltip.directive.ts","selector":"[appTooltip]","x":700,"y":1101,"lane":"shared"},{"id":"pipe_1","label":"TruncatePipe","type":"pipe","filePath":"src/app/shared/pipes/truncate.pipe.ts","selector":"truncate","x":980,"y":987,"lane":"shared"},{"id":"lazy_admin","label":"admin (lazy)","type":"lazy-module","filePath":"","route":"/admin","x":420,"y":855,"lane":"flow"}],"edges":[{"id":"e1","source":"cmp_1","target":"cmp_4","type":"route","label":"/"},{"id":"e2","source":"cmp_1","target":"cmp_2","type":"route","label":"/dashboard"},{"id":"e3","source":"cmp_2","target":"cmp_9","type":"child-route","label":"/stats"},{"id":"e4","source":"cmp_2","target":"cmp_8","type":"child-route","label":"/charts"},{"id":"e5","source":"cmp_1","target":"cmp_5","type":"route","label":"/profile"},{"id":"e6","source":"cmp_5","target":"cmp_10","type":"child-route","label":"/settings"},{"id":"e7","source":"cmp_1","target":"lazy_admin","type":"lazy-load","label":"/admin"},{"id":"e8","source":"cmp_1","target":"cmp_3","type":"route","label":"/help"},{"id":"e9","source":"cmp_1","target":"cmp_6","type":"route","label":"/"},{"id":"e10","source":"cmp_1","target":"cmp_7","type":"route","label":"/users"},{"id":"e11","source":"cmp_2","target":"cmp_12","type":"uses"},{"id":"e12","source":"cmp_2","target":"cmp_13","type":"uses"},{"id":"e13","source":"cmp_2","target":"cmp_11","type":"uses"},{"id":"e14","source":"cmp_3","target":"cmp_12","type":"uses"},{"id":"e15","source":"cmp_4","target":"cmp_12","type":"uses"},{"id":"e16","source":"cmp_4","target":"cmp_11","type":"uses"},{"id":"e17","source":"cmp_5","target":"cmp_12","type":"uses"},{"id":"e18","source":"cmp_5","target":"cmp_11","type":"uses"},{"id":"e19","source":"cmp_6","target":"cmp_12","type":"uses"},{"id":"e20","source":"cmp_6","target":"cmp_11","type":"uses"},{"id":"e21","source":"cmp_7","target":"cmp_12","type":"uses"},{"id":"e22","source":"cmp_8","target":"cmp_13","type":"uses"},{"id":"e23","source":"cmp_9","target":"cmp_12","type":"uses"},{"id":"e24","source":"cmp_10","target":"cmp_11","type":"uses"},{"id":"e25","source":"cmp_1","target":"cmp_6","type":"navigate","label":"/"},{"id":"e26","source":"cmp_1","target":"cmp_2","type":"navigate","label":"/dashboard"},{"id":"e27","source":"cmp_1","target":"cmp_5","type":"navigate","label":"/profile"},{"id":"e28","source":"cmp_1","target":"lazy_admin","type":"navigate","label":"/admin"},{"id":"e29","source":"cmp_1","target":"cmp_3","type":"navigate","label":"/help"},{"id":"e30","source":"cmp_2","target":"cmp_5","type":"navigate","label":"/profile"},{"id":"e31","source":"cmp_2","target":"cmp_9","type":"navigate","label":"/dashboard/stats"},{"id":"e32","source":"cmp_3","target":"cmp_6","type":"navigate","label":"/"},{"id":"e33","source":"cmp_4","target":"cmp_2","type":"navigate","label":"/dashboard"},{"id":"e34","source":"cmp_5","target":"cmp_2","type":"navigate","label":"/dashboard"},{"id":"e35","source":"cmp_2","target":"svc_2","type":"uses"},{"id":"e36","source":"cmp_4","target":"svc_3","type":"uses"},{"id":"e37","source":"cmp_5","target":"svc_1","type":"uses"},{"id":"e38","source":"cmp_2","target":"dir_2","type":"uses"},{"id":"e39","source":"cmp_4","target":"dir_1","type":"uses"},{"id":"e40","source":"cmp_4","target":"pipe_1","type":"uses"}],"metadata":{"framework":"angular","projectName":"demo-app-21-v2","generatedAt":"2026-03-05T23:30:34.106Z","projectRoot":"C:\\Users\\User\\Projetos\\demo-app-21-v2","totalComponents":20,"totalRoutes":10}};
+
+const NODE_W = 180, NODE_H = 64, CORNER = 8;
+const COLORS = {
+  root:         { bg:'#7C3AED', border:'#6D28D9', text:'#fafafa' },
+  component:    { bg:'#059669', border:'#047857', text:'#fafafa' },
+  module:       { bg:'#D97706', border:'#B45309', text:'#fafafa' },
+  'lazy-module':{ bg:'#FBBF24', border:'#FBBF24', text:'#fafafa' },
+  service:      { bg:'#0891B2', border:'#0E7490', text:'#fafafa' },
+  directive:    { bg:'#4F46E5', border:'#4338CA', text:'#fafafa' },
+  pipe:         { bg:'#DB2777', border:'#BE185D', text:'#fafafa' },
+};
+const TYPE_ICON  = { root:'⚡', component:'🧩', module:'📦', 'lazy-module':'⏱', service:'⚙', directive:'🔧', pipe:'🪄' };
+const EDGE_COLOR = { uses:'#94A3B8', route:'#3B82F6', 'child-route':'#60A5FA', 'lazy-load':'#FBBF24', navigate:'#EC4899' };
+const EDGE_DASH  = { uses:'none', route:'6,3', 'child-route':'4,2', 'lazy-load':'8,4', navigate:'3,3' };
+const EDGE_WIDTH = { uses:1.5, route:2, 'child-route':1.5, 'lazy-load':2, navigate:1.5 };
+
+// ════════════════════════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════════════════════════
+const state = {
+  nodes: GRAPH.nodes.map(n => Object.assign({}, n)),
+  edges: GRAPH.edges,
+  nodeMap: null,
+  selected: null,
+  tx: 0, ty: 0, scale: 1,
+  panning: false, panStart: null,
+  hasPanned: false,
+  dragging: null, dragOffset: null,
+  activeFilters: new Set(['root','component','module','lazy-module','service','directive','pipe']),
+  searchTerm: '',
+  routing: 'ortho',
+};
+state.nodeMap = new Map(state.nodes.map(n => [n.id, n]));
+
+// ════════════════════════════════════════════════════════════════════════════
+// DOM refs
+// ════════════════════════════════════════════════════════════════════════════
+const svg       = document.getElementById('graph');
+const defs      = document.getElementById('svg-defs');
+const viewport  = document.getElementById('viewport');
+const edgesGrp  = document.getElementById('edges-group');
+const nodesGrp  = document.getElementById('nodes-group');
+const zonesGrp  = document.getElementById('zones-group');
+const compList  = document.getElementById('comp-list');
+const searchEl  = document.getElementById('search');
+const filterRow = document.getElementById('filter-row');
+const detailPanel = document.getElementById('detail-panel');
+const dpTitle   = document.getElementById('dp-title');
+const dpBody    = document.getElementById('dp-body');
+const dpClose   = document.getElementById('dp-close');
+const legend    = document.getElementById('legend');
+
+// ════════════════════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════════════════════
+function init() {
+  const m = GRAPH.metadata;
+  document.getElementById('proj-name').textContent = m.projectName;
+  document.getElementById('badge-comps').textContent = GRAPH.nodes.length + ' nodes';
+  document.getElementById('badge-routes').textContent = m.totalRoutes + ' routes';
+  document.getElementById('badge-fw').textContent = m.framework.charAt(0).toUpperCase() + m.framework.slice(1);
+  document.title = '⚡ Boltflow — ' + m.projectName;
+
+  buildDefs();
+  buildFilters();
+  buildLegend();
+  renderSidebar();
+  renderGraph();
+  fitToScreen();
+  bindEvents();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SVG DEFS (arrowheads)
+// ════════════════════════════════════════════════════════════════════════════
+function buildDefs() {
+  const types = Object.keys(EDGE_COLOR);
+  types.forEach(type => {
+    const color = EDGE_COLOR[type];
+    const marker = document.createElementNS('http://www.w3.org/2000/svg','marker');
+    marker.setAttribute('id','arrow-'+type);
+    marker.setAttribute('markerWidth','8');
+    marker.setAttribute('markerHeight','6');
+    marker.setAttribute('refX','7');
+    marker.setAttribute('refY','3');
+    marker.setAttribute('orient','auto');
+    const poly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    poly.setAttribute('points','0 0, 8 3, 0 6');
+    poly.setAttribute('fill', color);
+    marker.appendChild(poly);
+    defs.appendChild(marker);
+  });
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// FILTERS
+// ════════════════════════════════════════════════════════════════════════════
+const TYPE_LABELS = { root:'Root', component:'Component', module:'Module', 'lazy-module':'Lazy', service:'Service', directive:'Directive', pipe:'Pipe' };
+function buildFilters() {
+  const types = [...new Set(GRAPH.nodes.map(n => n.type))];
+  types.forEach(type => {
+    const chip = document.createElement('button');
+    chip.className = 'filter-chip active';
+    chip.dataset.type = type;
+    chip.textContent = TYPE_LABELS[type] || type;
+    chip.addEventListener('click', () => toggleFilter(type, chip));
+    filterRow.appendChild(chip);
+  });
+}
+function toggleFilter(type, chip) {
+  if (state.activeFilters.has(type)) {
+    state.activeFilters.delete(type);
+    chip.classList.remove('active');
+  } else {
+    state.activeFilters.add(type);
+    chip.classList.add('active');
+  }
+  renderGraph();
+  renderSidebar();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// LEGEND
+// ════════════════════════════════════════════════════════════════════════════
+function buildLegend() {
+  const nodeTypes = [
+    { label:'Root',      color:'#7C3AED' },
+    { label:'Component', color:'#059669' },
+    { label:'Lazy',      color:'#FBBF24' },
+    { label:'Service',   color:'#0891B2' },
+    { label:'Directive', color:'#4F46E5' },
+    { label:'Pipe',      color:'#DB2777' },
+  ];
+  const edgeTypes = [
+    { label:'Uses',        color:'#94A3B8', dash:false },
+    { label:'Route',       color:'#3B82F6', dash:true },
+    { label:'Child route', color:'#60A5FA', dash:true },
+    { label:'Lazy load',   color:'#FBBF24', dash:true },
+    { label:'Navigate',    color:'#EC4899', dash:true },
+  ];
+  let html = '<div style="font-size:.7rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Legend</div>';
+  nodeTypes.forEach(t => {
+    html += '<div class="legend-row"><div class="legend-dot" style="background:'+t.color+'"></div>'+t.label+'</div>';
+  });
+  html += '<div style="margin:6px 0 4px;border-top:1px solid var(--border)"></div>';
+  edgeTypes.forEach(t => {
+    const lineStyle = t.dash
+      ? 'border-top:2px dashed '+t.color+';width:24px;height:0'
+      : 'background:'+t.color+';width:24px;height:2px';
+    html += '<div class="legend-row"><div style="'+lineStyle+'"></div>'+t.label+'</div>';
+  });
+  legend.innerHTML = html;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SIDEBAR
+// ════════════════════════════════════════════════════════════════════════════
+function renderSidebar() {
+  const term = state.searchTerm.toLowerCase();
+  const visible = state.nodes.filter(n =>
+    state.activeFilters.has(n.type) &&
+    (n.label.toLowerCase().includes(term) || (n.selector||'').toLowerCase().includes(term))
+  );
+  compList.innerHTML = '';
+  visible.forEach(node => {
+    const item = document.createElement('div');
+    item.className = 'comp-item' + (state.selected === node.id ? ' selected' : '');
+    item.dataset.id = node.id;
+    const c = COLORS[node.type] || COLORS.component;
+    item.innerHTML =
+      '<div class="comp-item-name"><span class="type-dot" style="background:'+c.bg+'"></span>'+escHtml(node.label)+'</div>'+
+      '<div class="comp-item-meta">'+(node.selector ? escHtml(node.selector) : '')+(node.route ? ' · '+escHtml(node.route) : '')+'</div>';
+    item.addEventListener('click', () => selectNode(node.id));
+    compList.appendChild(item);
+  });
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// GRAPH RENDER
+// ════════════════════════════════════════════════════════════════════════════
+function visibleSet() {
+  const term = state.searchTerm.toLowerCase();
+  return new Set(
+    state.nodes
+      .filter(n => state.activeFilters.has(n.type) &&
+        (n.label.toLowerCase().includes(term) || (n.selector||'').toLowerCase().includes(term)))
+      .map(n => n.id)
+  );
+}
+
+function renderGraph() {
+  zonesGrp.innerHTML = '';
+  edgesGrp.innerHTML = '';
+  nodesGrp.innerHTML = '';
+  const vis = visibleSet();
+
+  // ── Zone backgrounds ──────────────────────────────────────────────────────────
+  const flowVis = state.nodes.filter(n => vis.has(n.id) && n.lane !== 'shared');
+  const compVis = state.nodes.filter(n => vis.has(n.id) && n.lane === 'shared' && n.type === 'component');
+  const svcVis  = state.nodes.filter(n => vis.has(n.id) && n.lane === 'shared' && n.type === 'service');
+  const dirVis  = state.nodes.filter(n => vis.has(n.id) && n.lane === 'shared' && n.type === 'directive');
+  const pipeVis = state.nodes.filter(n => vis.has(n.id) && n.lane === 'shared' && n.type === 'pipe');
+  const ZONE_PAD  = 28;
+
+  function drawZone(zNodes, label, fill, stroke) {
+    if (!zNodes.length) return;
+    const x1 = Math.min(...zNodes.map(n => n.x)) - NODE_W / 2 - ZONE_PAD;
+    const y1 = Math.min(...zNodes.map(n => n.y)) - NODE_H / 2 - ZONE_PAD;
+    const x2 = Math.max(...zNodes.map(n => n.x)) + NODE_W / 2 + ZONE_PAD;
+    const y2 = Math.max(...zNodes.map(n => n.y)) + NODE_H / 2 + ZONE_PAD;
+    const bg = svgEl('rect');
+    bg.setAttribute('x', x1); bg.setAttribute('y', y1);
+    bg.setAttribute('width', x2 - x1); bg.setAttribute('height', y2 - y1);
+    bg.setAttribute('rx', '14');
+    bg.setAttribute('fill', fill);
+    bg.setAttribute('stroke', stroke); bg.setAttribute('stroke-width', '1');
+    bg.setAttribute('pointer-events', 'none');
+    zonesGrp.appendChild(bg);
+    const lbl = svgEl('text');
+    lbl.setAttribute('x', x1 + 12); lbl.setAttribute('y', y1 + 16);
+    lbl.setAttribute('font-size', '10'); lbl.setAttribute('font-weight', '700');
+    lbl.setAttribute('fill', stroke); lbl.setAttribute('opacity', '0.9');
+    lbl.setAttribute('letter-spacing', '0.09em');
+    lbl.setAttribute('pointer-events', 'none');
+    lbl.textContent = label;
+    zonesGrp.appendChild(lbl);
+  }
+
+  drawZone(flowVis, 'NAVIGATION FLOW', 'rgba(59,130,246,0.07)',  'rgba(59,130,246,0.30)');
+  drawZone(compVis, 'COMPONENTS',      'rgba(5,150,105,0.07)',   'rgba(5,150,105,0.30)');
+  drawZone(svcVis,  'SERVICES',        'rgba(8,145,178,0.07)',   'rgba(8,145,178,0.30)');
+  drawZone(dirVis,  'DIRECTIVES',      'rgba(79,70,229,0.07)',   'rgba(79,70,229,0.30)');
+  drawZone(pipeVis, 'PIPES',           'rgba(219,39,119,0.07)',  'rgba(219,39,119,0.30)');
+
+  // ── Focus set: selected node + its direct neighbours via any edge ────────────
+  // Nodes/edges outside this set are dimmed when something is selected.
+  const focusedNodes = new Set();
+  const focusedEdges = new Set();
+  if (state.selected) {
+    focusedNodes.add(state.selected);
+    state.edges.forEach(edge => {
+      if (edge.source === state.selected || edge.target === state.selected) {
+        focusedNodes.add(edge.source);
+        focusedNodes.add(edge.target);
+        focusedEdges.add(edge.id);
+      }
+    });
+  }
+  const hasFocus = focusedNodes.size > 0;
+  const DIM = '0.12'; // opacity for non-focused elements
+
+  // Pre-compute parallel-edge groups so overlapping arrows can be fanned apart
+  const parallelMap = new Map();
+  state.edges.forEach(edge => {
+    if (!vis.has(edge.source) || !vis.has(edge.target)) return;
+    const key = edge.source + '\x00' + edge.target;
+    if (!parallelMap.has(key)) parallelMap.set(key, []);
+    parallelMap.get(key).push(edge);
+  });
+  const PARALLEL_STEP = 28; // px of extra perpendicular offset per parallel edge
+
+  // Edges
+  state.edges.forEach(edge => {
+    if (!vis.has(edge.source) || !vis.has(edge.target)) return;
+    const src = state.nodeMap.get(edge.source);
+    const tgt = state.nodeMap.get(edge.target);
+    if (!src || !tgt) return;
+
+    const { sx, sy, tx, ty } = state.routing === 'ortho'
+      ? calcEdgePointsOrtho(src, tgt)
+      : calcEdgePoints(src, tgt);
+    const group   = parallelMap.get(edge.source + '\x00' + edge.target) || [edge];
+    const idx     = group.indexOf(edge);
+    const pOffset = (idx - (group.length - 1) / 2) * PARALLEL_STEP;
+
+    const color = EDGE_COLOR[edge.type] || '#94A3B8';
+    const dash  = EDGE_DASH[edge.type] || 'none';
+    const width = EDGE_WIDTH[edge.type] || 1.5;
+    const { d, midX, midY } = state.routing === 'ortho'
+      ? orthoPath(sx, sy, tx, ty, pOffset)
+      : curvePath(sx, sy, tx, ty, pOffset);
+
+    const edgeOpacity = hasFocus ? (focusedEdges.has(edge.id) ? '0.85' : DIM) : '0.75';
+
+    const path = svgEl('path');
+    path.setAttribute('d', d);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', color);
+    path.setAttribute('stroke-width', width);
+    if (dash !== 'none') path.setAttribute('stroke-dasharray', dash);
+    path.setAttribute('marker-end', 'url(#arrow-'+edge.type+')');
+    path.setAttribute('opacity', edgeOpacity);
+    edgesGrp.appendChild(path);
+
+    // Edge label — placed at the arc midpoint so it follows the curve
+    if (edge.label) {
+      const lbl = svgEl('text');
+      lbl.setAttribute('x', midX); lbl.setAttribute('y', midY - 5);
+      lbl.setAttribute('text-anchor', 'middle');
+      lbl.setAttribute('font-size', '10');
+      lbl.setAttribute('fill', color);
+      lbl.setAttribute('opacity', hasFocus ? (focusedEdges.has(edge.id) ? '0.9' : DIM) : '0.9');
+      lbl.setAttribute('pointer-events', 'none');
+      lbl.textContent = edge.label;
+      edgesGrp.appendChild(lbl);
+    }
+  });
+
+  // Nodes
+  state.nodes.forEach(node => {
+    if (!vis.has(node.id)) return;
+    const c = COLORS[node.type] || COLORS.component;
+    const x = node.x - NODE_W / 2, y = node.y - NODE_H / 2;
+    const isSelected = state.selected === node.id;
+    const nodeOpacity = hasFocus ? (focusedNodes.has(node.id) ? '1' : DIM) : '1';
+
+    const g = svgEl('g');
+    g.setAttribute('transform', 'translate('+x+','+y+')');
+    g.setAttribute('cursor', 'pointer');
+    g.setAttribute('opacity', nodeOpacity);
+    g.dataset.id = node.id;
+    g.addEventListener('mousedown', onNodeMouseDown);
+    g.addEventListener('click', e => { e.stopPropagation(); selectNode(node.id); });
+
+    // Shadow / selection ring
+    if (isSelected) {
+      const ring = svgEl('rect');
+      ring.setAttribute('x', -3); ring.setAttribute('y', -3);
+      ring.setAttribute('width', NODE_W + 6); ring.setAttribute('height', NODE_H + 6);
+      ring.setAttribute('rx', CORNER + 2); ring.setAttribute('fill', 'none');
+      ring.setAttribute('stroke', '#38BDF8'); ring.setAttribute('stroke-width', '2');
+      g.appendChild(ring);
+    }
+
+    // Background rect
+    const rect = svgEl('rect');
+    rect.setAttribute('width', NODE_W); rect.setAttribute('height', NODE_H);
+    rect.setAttribute('rx', CORNER);
+    rect.setAttribute('fill', c.bg);
+    rect.setAttribute('stroke', c.border);
+    rect.setAttribute('stroke-width', isSelected ? '2' : '1');
+    g.appendChild(rect);
+
+    // Top color bar
+    const bar = svgEl('rect');
+    bar.setAttribute('width', NODE_W); bar.setAttribute('height', '4');
+    bar.setAttribute('rx', CORNER);
+    bar.setAttribute('fill', c.border);
+    bar.setAttribute('opacity', '0.6');
+    g.appendChild(bar);
+
+    // Icon + label
+    const icon = svgEl('text');
+    icon.setAttribute('x', 12); icon.setAttribute('y', 30);
+    icon.setAttribute('font-size', '14');
+    icon.setAttribute('fill', c.text); icon.setAttribute('opacity', '0.8');
+    icon.setAttribute('pointer-events', 'none');
+    icon.textContent = TYPE_ICON[node.type] || '🔷';
+    g.appendChild(icon);
+
+    const label = svgEl('text');
+    label.setAttribute('x', 32); label.setAttribute('y', 30);
+    label.setAttribute('font-size', '12');
+    label.setAttribute('font-weight', '600');
+    label.setAttribute('fill', c.text);
+    label.setAttribute('pointer-events', 'none');
+    label.textContent = truncate(node.label, 18);
+    g.appendChild(label);
+
+    // Sub-label (selector or route)
+    if (node.selector || node.route) {
+      const sub = svgEl('text');
+      sub.setAttribute('x', 32); sub.setAttribute('y', 48);
+      sub.setAttribute('font-size', '10');
+      sub.setAttribute('fill', c.text); sub.setAttribute('opacity', '0.65');
+      sub.setAttribute('pointer-events', 'none');
+      sub.textContent = truncate(node.route || node.selector || '', 22);
+      g.appendChild(sub);
+    }
+
+    nodesGrp.appendChild(g);
+  });
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SELECTION & DETAIL PANEL
+// ════════════════════════════════════════════════════════════════════════════
+function selectNode(id) {
+  state.selected = id;
+  renderGraph();
+  renderSidebar();
+
+  const node = state.nodeMap.get(id);
+  if (!node) { closeDetail(); return; }
+
+  detailPanel.classList.remove('hidden');
+  dpTitle.textContent = node.label;
+
+  const c = COLORS[node.type] || COLORS.component;
+  const typeBadge = '<span class="dp-badge" style="background:'+c.bg+'">'+TYPE_LABELS[node.type]+'</span>';
+
+  let html = '';
+  html += '<div class="dp-section">';
+  html += '<div class="dp-section-title">Identity</div>';
+  html += row('Type', typeBadge);
+  if (node.type === 'pipe' && node.selector) html += row('Pipe name', code(node.selector));
+  else if (node.selector) html += row('Selector', code(node.selector));
+  if (node.route)    html += row('Route', code(node.route));
+  if (node.isStandalone !== undefined) html += row('Standalone', node.isStandalone ? 'Yes' : 'No');
+  html += '</div>';
+
+  if (node.inputs && node.inputs.length) {
+    html += '<div class="dp-section"><div class="dp-section-title">Inputs ('+node.inputs.length+')</div>';
+    node.inputs.forEach(i => {
+      html += '<span class="dp-chip" title="'+(i.type||'')+'">'+escHtml(i.name)+(i.required?'<sup style="color:#F87171">*</sup>':'')+'</span>';
+    });
+    html += '</div>';
+  }
+  if (node.outputs && node.outputs.length) {
+    html += '<div class="dp-section"><div class="dp-section-title">Outputs ('+node.outputs.length+')</div>';
+    node.outputs.forEach(o => {
+      html += '<span class="dp-chip">'+escHtml(o.name)+'</span>';
+    });
+    html += '</div>';
+  }
+
+  // Connections
+  const usedBy = state.edges.filter(e => e.target === id && e.type === 'uses').map(e => state.nodeMap.get(e.source)).filter(Boolean);
+  const uses   = state.edges.filter(e => e.source === id && e.type === 'uses').map(e => state.nodeMap.get(e.target)).filter(Boolean);
+
+  if (uses.length) {
+    html += '<div class="dp-section"><div class="dp-section-title">Uses ('+uses.length+')</div>';
+    uses.forEach(n => html += '<span class="dp-chip" onclick="selectNode(\''+n.id+'\')">'+escHtml(n.label)+'</span>');
+    html += '</div>';
+  }
+  if (usedBy.length) {
+    html += '<div class="dp-section"><div class="dp-section-title">Used by ('+usedBy.length+')</div>';
+    usedBy.forEach(n => html += '<span class="dp-chip" onclick="selectNode(\''+n.id+'\')">'+escHtml(n.label)+'</span>');
+    html += '</div>';
+  }
+
+  html += '<div class="dp-section"><div class="dp-section-title">File</div><div class="dp-filepath">'+escHtml(node.filePath)+'</div></div>';
+
+  dpBody.innerHTML = html;
+}
+
+function closeDetail() {
+  state.selected = null;
+  detailPanel.classList.add('hidden');
+  renderGraph();
+  renderSidebar();
+}
+
+function row(label, value) {
+  return '<div class="dp-row"><span class="dp-label">'+escHtml(label)+'</span><span class="dp-value">'+value+'</span></div>';
+}
+function code(val) { return '<code style="font-size:.78rem;background:var(--surface2);padding:1px 5px;border-radius:3px">'+escHtml(val)+'</code>'; }
+
+// Expose selectNode globally so dp-chip onclick can use it
+window.selectNode = selectNode;
+
+// ════════════════════════════════════════════════════════════════════════════
+// GEOMETRY
+// ════════════════════════════════════════════════════════════════════════════
+function calcEdgePoints(src, tgt) {
+  const dx = tgt.x - src.x, dy = tgt.y - src.y;
+  const angle = Math.atan2(dy, dx);
+  const hw = NODE_W / 2 + 2, hh = NODE_H / 2 + 2;
+
+  function borderPt(cx, cy, a) {
+    const ca = Math.cos(a), sa = Math.sin(a);
+    const t = Math.min(
+      Math.abs(ca) < 1e-9 ? Infinity : hw / Math.abs(ca),
+      Math.abs(sa) < 1e-9 ? Infinity : hh / Math.abs(sa)
+    );
+    return { x: cx + ca * t, y: cy + sa * t };
+  }
+
+  const s = borderPt(src.x, src.y, angle);
+  const t = borderPt(tgt.x, tgt.y, angle + Math.PI);
+  return { sx: s.x, sy: s.y, tx: t.x, ty: t.y };
+}
+
+function curvePath(sx, sy, tx, ty, pOffset) {
+  const dx = tx - sx, dy = ty - sy;
+  const dist = Math.sqrt(dx*dx+dy*dy) || 1;
+  const bend = Math.min(dist * 0.35, 80) + (pOffset || 0);
+  const cpx = (sx+tx)/2 - dy/dist*bend;
+  const cpy = (sy+ty)/2 + dx/dist*bend;
+  // Midpoint of the quadratic bezier at t=0.5
+  const midX = 0.25*sx + 0.5*cpx + 0.25*tx;
+  const midY = 0.25*sy + 0.5*cpy + 0.25*ty;
+  return { d: 'M'+sx+','+sy+' Q'+cpx+','+cpy+' '+tx+','+ty, midX, midY };
+}
+
+function calcEdgePointsOrtho(src, tgt) {
+  // Exit the right side of source when target is to the right, otherwise left.
+  if (tgt.x >= src.x) {
+    return { sx: src.x + NODE_W/2, sy: src.y, tx: tgt.x - NODE_W/2, ty: tgt.y };
+  } else {
+    return { sx: src.x - NODE_W/2, sy: src.y, tx: tgt.x + NODE_W/2, ty: tgt.y };
+  }
+}
+
+function orthoPath(sx, sy, tx, ty, pOffset) {
+  // Offset the vertical pivot segment to separate parallel edges
+  const midX = (sx + tx) / 2 + (pOffset || 0);
+  return {
+    d: 'M'+sx+','+sy+' L'+midX+','+sy+' L'+midX+','+ty+' L'+tx+','+ty,
+    midX,
+    midY: (sy + ty) / 2,
+  };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// TRANSFORM / ZOOM / PAN
+// ════════════════════════════════════════════════════════════════════════════
+function applyTransform() {
+  viewport.setAttribute('transform','translate('+state.tx+','+state.ty+') scale('+state.scale+')');
+}
+
+function fitToScreen() {
+  const vis = visibleSet();
+  const visNodes = state.nodes.filter(n => vis.has(n.id));
+  if (!visNodes.length) return;
+
+  const rect = svg.getBoundingClientRect();
+  const W = rect.width || 800, H = rect.height || 600;
+  const pad = 60;
+
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  visNodes.forEach(n => {
+    minX = Math.min(minX, n.x - NODE_W/2);
+    minY = Math.min(minY, n.y - NODE_H/2);
+    maxX = Math.max(maxX, n.x + NODE_W/2);
+    maxY = Math.max(maxY, n.y + NODE_H/2);
+  });
+
+  const contentW = maxX - minX + pad*2;
+  const contentH = maxY - minY + pad*2;
+  const scale = Math.min((W/contentW), (H/contentH), 1.5);
+  state.scale = scale;
+  state.tx = (W - contentW * scale) / 2 - (minX - pad) * scale;
+  state.ty = (H - contentH * scale) / 2 - (minY - pad) * scale;
+  applyTransform();
+}
+
+function zoom(factor, cx, cy) {
+  const rect = svg.getBoundingClientRect();
+  const ox = (cx !== undefined ? cx : rect.width/2);
+  const oy = (cy !== undefined ? cy : rect.height/2);
+  state.tx = ox - (ox - state.tx) * factor;
+  state.ty = oy - (oy - state.ty) * factor;
+  state.scale = Math.max(0.1, Math.min(4, state.scale * factor));
+  applyTransform();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// DRAG NODES
+// ════════════════════════════════════════════════════════════════════════════
+function onNodeMouseDown(e) {
+  e.stopPropagation();
+  const id = e.currentTarget.dataset.id;
+  const node = state.nodeMap.get(id);
+  if (!node) return;
+  state.dragging = node;
+  const svgPt = svgPoint(e.clientX, e.clientY);
+  state.dragOffset = { x: svgPt.x - node.x, y: svgPt.y - node.y };
+  svg.addEventListener('mousemove', onDragMove);
+  svg.addEventListener('mouseup', onDragEnd);
+}
+
+function onDragMove(e) {
+  if (!state.dragging) return;
+  const pt = svgPoint(e.clientX, e.clientY);
+  state.dragging.x = pt.x - state.dragOffset.x;
+  state.dragging.y = pt.y - state.dragOffset.y;
+  renderGraph();
+}
+
+function onDragEnd() {
+  state.dragging = null;
+  svg.removeEventListener('mousemove', onDragMove);
+  svg.removeEventListener('mouseup', onDragEnd);
+}
+
+function svgPoint(cx, cy) {
+  const rect = svg.getBoundingClientRect();
+  return {
+    x: (cx - rect.left - state.tx) / state.scale,
+    y: (cy - rect.top  - state.ty) / state.scale,
+  };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// EVENTS
+// ════════════════════════════════════════════════════════════════════════════
+function bindEvents() {
+  // Background pan
+  const bg = document.getElementById('bg');
+  bg.addEventListener('mousedown', e => {
+    if (state.dragging) return;
+    state.panning = true;
+    state.panStart = { x: e.clientX - state.tx, y: e.clientY - state.ty };
+    svg.classList.add('panning');
+  });
+  window.addEventListener('mousemove', e => {
+    if (!state.panning) return;
+    state.hasPanned = true;
+    state.tx = e.clientX - state.panStart.x;
+    state.ty = e.clientY - state.panStart.y;
+    applyTransform();
+  });
+  window.addEventListener('mouseup', () => {
+    state.panning = false;
+    svg.classList.remove('panning');
+  });
+
+  // Wheel zoom
+  svg.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = svg.getBoundingClientRect();
+    zoom(e.deltaY < 0 ? 1.12 : 0.89, e.clientX - rect.left, e.clientY - rect.top);
+  }, { passive: false });
+
+  // Zoom buttons
+  document.getElementById('btn-zoomin').addEventListener('click', () => zoom(1.2));
+  document.getElementById('btn-zoomout').addEventListener('click', () => zoom(0.83));
+  document.getElementById('btn-fit').addEventListener('click', fitToScreen);
+
+  // Click on SVG background → deselect (but not after a pan drag)
+  svg.addEventListener('click', e => {
+    if (e.target === svg || e.target.id === 'bg' || e.target.id === 'graph') {
+      if (state.hasPanned) { state.hasPanned = false; return; }
+      closeDetail();
+    }
+  });
+
+  // Detail panel close
+  dpClose.addEventListener('click', closeDetail);
+
+  // Search
+  searchEl.addEventListener('input', e => {
+    state.searchTerm = e.target.value.trim();
+    renderSidebar();
+    renderGraph();
+  });
+
+  // Routing toggle
+  document.getElementById('routing-btn').addEventListener('click', () => {
+    state.routing = state.routing === 'curve' ? 'ortho' : 'curve';
+    document.getElementById('routing-btn').textContent =
+      state.routing === 'ortho' ? '⊢ Ortho' : '⌒ Curve';
+    renderGraph();
+  });
+
+  // Theme toggle
+  document.getElementById('theme-btn').addEventListener('click', () => {
+    document.body.classList.toggle('light');
+    document.getElementById('theme-btn').textContent =
+      document.body.classList.contains('light') ? '🌙 Dark' : '☀ Light';
+  });
+
+  // Keyboard shortcuts
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeDetail();
+    if ((e.key === '+' || e.key === '=') && !e.target.closest('input')) zoom(1.2);
+    if (e.key === '-' && !e.target.closest('input')) zoom(0.83);
+    if (e.key === '0' && !e.target.closest('input')) fitToScreen();
+  });
+
+  // Touch support (pinch zoom + pan)
+  let lastTouches = null;
+  svg.addEventListener('touchstart', e => {
+    lastTouches = e.touches;
+    if (e.touches.length === 1) {
+      state.panning = true;
+      state.panStart = { x: e.touches[0].clientX - state.tx, y: e.touches[0].clientY - state.ty };
+    }
+  }, { passive: true });
+  svg.addEventListener('touchmove', e => {
+    if (e.touches.length === 2 && lastTouches && lastTouches.length === 2) {
+      const prevDist = Math.hypot(lastTouches[0].clientX - lastTouches[1].clientX, lastTouches[0].clientY - lastTouches[1].clientY);
+      const currDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      const rect = svg.getBoundingClientRect();
+      const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+      const my = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+      zoom(currDist / prevDist, mx, my);
+    } else if (e.touches.length === 1 && state.panning) {
+      state.tx = e.touches[0].clientX - state.panStart.x;
+      state.ty = e.touches[0].clientY - state.panStart.y;
+      applyTransform();
+    }
+    lastTouches = e.touches;
+  }, { passive: true });
+  svg.addEventListener('touchend', () => { state.panning = false; });
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════════════════════════════════════
+function svgEl(tag) { return document.createElementNS('http://www.w3.org/2000/svg', tag); }
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function truncate(s, max) { return s.length > max ? s.slice(0, max-1) + '…' : s; }
+
+// ════════════════════════════════════════════════════════════════════════════
+// START
+// ════════════════════════════════════════════════════════════════════════════
+init();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+{
+  "name": "boltflow",
+  "version": "0.1.0",
+  "description": "Generate interactive flow visualizations of your Angular (and more) application component architecture",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "boltflow": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "postbuild": "node scripts/copy-assets.js",
+    "dev": "tsc --watch",
+    "start": "node dist/cli.js",
+    "test": "jest --passWithNoTests",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "angular",
+    "visualization",
+    "components",
+    "flow",
+    "architecture",
+    "diagram",
+    "graph",
+    "devtools"
+  ],
+  "author": "",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^12.0.0",
+    "fast-glob": "^3.3.2",
+    "node-html-parser": "^6.1.13",
+    "open": "^8.4.2",
+    "ora": "^5.4.1",
+    "ts-morph": "^22.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

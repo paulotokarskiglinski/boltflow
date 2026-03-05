@@ -1,0 +1,171 @@
+export type Framework = 'angular' | 'react' | 'vue';
+
+export interface InputInfo {
+  name: string;
+  type?: string;
+  required?: boolean;
+}
+
+export interface OutputInfo {
+  name: string;
+  type?: string;
+}
+
+export interface ComponentInfo {
+  id: string;
+  /** Class name, e.g. "HomeComponent" */
+  name: string;
+  /** HTML selector, e.g. "app-home" */
+  selector: string;
+  /** Relative path to the .ts file */
+  filePath: string;
+  /** Relative path to the .html template file, if external */
+  templatePath?: string;
+  isStandalone: boolean;
+  inputs: InputInfo[];
+  outputs: OutputInfo[];
+  /** Selectors of components found used in this component's template */
+  usedComponents: string[];
+  /** routerLink values found in this component's template */
+  routerLinks: string[];
+  /** href values of internal <a> tags found in the template */
+  hrefs: string[];
+  /** Route paths from router.navigate() / router.navigateByUrl() calls in the class */
+  navigateCalls: string[];
+  /** Class names of @Injectable services injected via inject() or constructor */
+  injectedServices: string[];
+  /** Full selectors of @Directive directives used in this component's template */
+  usedDirectives: string[];
+  /** Pipe names (@Pipe({ name }) used in this component's template */
+  usedPipes: string[];
+}
+
+export interface RouteInfo {
+  path: string;
+  /** Angular component class name (resolved from the route config) */
+  componentName?: string;
+  /** Reference to a ComponentInfo id after cross-referencing */
+  componentId?: string;
+  children?: RouteInfo[];
+  /** Raw loadChildren / loadComponent expression text */
+  loadChildren?: string;
+  redirectTo?: string;
+  title?: string;
+}
+
+export interface ModuleInfo {
+  id: string;
+  name: string;
+  filePath: string;
+  declarations: string[];
+  imports: string[];
+  exports: string[];
+  routes: RouteInfo[];
+}
+
+export interface ServiceInfo {
+  id: string;
+  name: string;
+  filePath: string;
+  providedIn?: string;
+}
+
+export interface DirectiveInfo {
+  id: string;
+  name: string;
+  selector: string;
+  filePath: string;
+}
+
+export interface PipeInfo {
+  id: string;
+  name: string;
+  pipeName: string;
+  filePath: string;
+}
+
+export interface AnalysisResult {
+  framework: Framework;
+  projectRoot: string;
+  components: ComponentInfo[];
+  routes: RouteInfo[];
+  modules: ModuleInfo[];
+  services: ServiceInfo[];
+  directives: DirectiveInfo[];
+  pipes: PipeInfo[];
+}
+
+// ─── Graph model ─────────────────────────────────────────────────────────────
+
+export type NodeType = 'root' | 'component' | 'module' | 'lazy-module' | 'service' | 'directive' | 'pipe';
+
+
+export interface GraphNode {
+  id: string;
+  label: string;
+  type: NodeType;
+  filePath: string;
+  selector?: string;
+  route?: string;
+  inputs?: InputInfo[];
+  outputs?: OutputInfo[];
+  isStandalone?: boolean;
+  /** Layout lane: 'flow' = routed hierarchy, 'shared' = reusable components */
+  lane?: 'flow' | 'shared';
+  /** Pre-computed layout position (pixels) */
+  x: number;
+  y: number;
+}
+
+export type EdgeType = 'uses' | 'route' | 'child-route' | 'lazy-load' | 'navigate';
+
+export interface GraphEdge {
+  id: string;
+  source: string;
+  target: string;
+  type: EdgeType;
+  label?: string;
+}
+
+export interface FlowGraph {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  metadata: {
+    framework: Framework;
+    projectName: string;
+    generatedAt: string;
+    projectRoot: string;
+    totalComponents?: number;
+    totalRoutes?: number;
+    totalSharedComponents?: number;
+    totalSharedServices?: number;
+    totalSharedDirectives?: number;
+    totalSharedPipes?: number;
+  };
+}
+
+// ─── CLI / API options ────────────────────────────────────────────────────────
+
+export interface BoltflowOptions {
+  /** Absolute path to the project root */
+  projectPath: string;
+  /** Absolute path to tsconfig.json (defaults to <projectPath>/tsconfig.json) */
+  tsConfigPath?: string;
+  /** Absolute path for the output file (without extension) */
+  output?: string;
+  /** Output format */
+  format?: 'html' | 'json' | 'both';
+  /** Open the HTML output in the browser after generation */
+  open?: boolean;
+}
+
+export interface BoltflowResult {
+  outputPath: string;
+  totalComponents?: number;
+  totalSharedComponents?: number;
+  totalServices?: number;
+  totalDirectives?: number;
+  totalPipes?: number;
+  totalRoutes?: number;
+  graph: FlowGraph;
+}

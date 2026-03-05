@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>⚡ Boltflow — __TITLE__</title>
+<!-- importing css -->
+__CSS__
+</head>
+<body>
+<header>
+  <div class="logo">⚡ Boltflow <span id="proj-name"></span></div>
+  <div class="badge" id="badge-comps"></div>
+  <div class="badge" id="badge-routes"></div>
+  <div class="badge" id="badge-fw"></div>
+  <div class="spacer"></div>
+  <button class="theme-btn" id="routing-btn" title="Toggle edge routing style">⊢ Ortho</button>
+  <button class="theme-btn" id="theme-btn" title="Toggle light/dark theme">☀ Light</button>
+</header>
+<div class="workspace">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <input type="text" class="search-input" id="search" placeholder="Search components…" />
+      <div class="filter-row" id="filter-row"></div>
+    </div>
+    <div class="comp-list" id="comp-list"></div>
+  </aside>
+  <!-- SVG canvas -->
+  <div class="canvas-wrap">
+    <svg id="graph" xmlns="http://www.w3.org/2000/svg">
+      <defs id="svg-defs"></defs>
+      <rect id="bg" width="100%" height="100%" fill="transparent" />
+      <g id="viewport">
+        <g id="zones-group"></g>
+        <g id="edges-group"></g>
+        <g id="nodes-group"></g>
+      </g>
+    </svg>
+    <div class="zoom-btns">
+      <button id="btn-fit" title="Fit to screen">⊙</button>
+      <button id="btn-zoomin" title="Zoom in">+</button>
+      <button id="btn-zoomout" title="Zoom out">−</button>
+    </div>
+    <!-- Legend -->
+    <div class="legend" id="legend"></div>
+  </div>
+  <!-- Detail panel -->
+  <aside class="detail-panel hidden" id="detail-panel">
+    <div class="dp-header">
+      <span class="dp-title" id="dp-title">Component</span>
+      <button class="dp-close" id="dp-close" title="Close">✕</button>
+    </div>
+    <div class="dp-body" id="dp-body">
+      <p class="no-select">Click a node to see details</p>
+    </div>
+  </aside>
+</div>
+<!-- importing js -->
+__JS__
+</body>
+</html>

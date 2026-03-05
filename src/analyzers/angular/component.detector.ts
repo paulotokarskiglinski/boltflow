@@ -1,0 +1,255 @@
+import {
+  SourceFile,
+  ClassDeclaration,
+  Node,
+  ObjectLiteralExpression,
+  PropertyAssignment,
+  Project,
+  CallExpression,
+} from 'ts-morph';
+import * as path from 'path';
+import { ComponentInfo, InputInfo, OutputInfo } from '../../types';
+
+let _idCounter = 0;
+function nextId(prefix: string): string {
+  return `${prefix}_${++_idCounter}`;
+}
+
+/**
+ * Scans all source files in the ts-morph Project and returns every class
+ * decorated with @Component.
+ */
+export function detectComponents(
+  project: Project,
+  projectRoot: string
+): ComponentInfo[] {
+  const components: ComponentInfo[] = [];
+
+  for (const file of project.getSourceFiles().filter(
+    f => !f.getFilePath().includes('node_modules') && !f.getFilePath().endsWith('.spec.ts')
+  )) {
+    for (const cls of file.getClasses()) {
+      const decorator = cls.getDecorator('Component');
+      if (!decorator) continue;
+
+      const args = decorator.getArguments();
+      if (!args.length || !Node.isObjectLiteralExpression(args[0])) continue;
+
+      const meta = args[0] as ObjectLiteralExpression;
+
+      const selector = getStringProp(meta, 'selector') ?? toSelector(cls.getName() ?? 'unknown');
+      const templateUrl = getStringProp(meta, 'templateUrl');
+      const isStandalone = getBoolProp(meta, 'standalone') ?? false;
+
+      const filePath = path.relative(projectRoot, file.getFilePath()).replace(/\\/g, '/');
+      const templatePath = templateUrl
+        ? resolveTemplatePath(filePath, templateUrl)
+        : undefined;
+
+      const inputs: InputInfo[] = [];
+      const outputs: OutputInfo[] = [];
+
+      collectInputsOutputs(cls, inputs, outputs);
+      // Also handle the new `inputs: []` / `outputs: []` array in @Component decorator
+      collectDecoratorInputsOutputs(meta, inputs, outputs);
+
+      components.push({
+        id: nextId('cmp'),
+        name: cls.getName() ?? selector,
+        selector,
+        filePath,
+        templatePath,
+        isStandalone,
+        inputs,
+        outputs,
+        usedComponents: [],            // filled later by template analyzer
+        routerLinks: [],               // filled later by template analyzer
+        hrefs: [],                     // filled later by template analyzer
+        navigateCalls: collectNavigationCalls(cls),
+        injectedServices: [],          // filled later by angular analyzer
+        usedDirectives: [],            // filled later by template analyzer
+        usedPipes: [],                 // filled later by template analyzer
+      });
+    }
+  }
+
+  return components;
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function getStringProp(obj: ObjectLiteralExpression, key: string): string | undefined {
+  const prop = obj.getProperty(key);
+  if (!prop || !Node.isPropertyAssignment(prop)) return undefined;
+  const init = (prop as PropertyAssignment).getInitializer();
+  if (!init) return undefined;
+  // Strip surrounding quotes
+  return init.getText().replace(/^['"`]|['"`]$/g, '');
+}
+
+function getBoolProp(obj: ObjectLiteralExpression, key: string): boolean | undefined {
+  const prop = obj.getProperty(key);
+  if (!prop || !Node.isPropertyAssignment(prop)) return undefined;
+  const text = (prop as PropertyAssignment).getInitializer()?.getText();
+  if (text === 'true') return true;
+  if (text === 'false') return false;
+  return undefined;
+}
+
+function collectInputsOutputs(
+  cls: ClassDeclaration,
+  inputs: InputInfo[],
+  outputs: OutputInfo[]
+): void {
+  for (const prop of cls.getProperties()) {
+    const inputDec = prop.getDecorator('Input');
+    const outputDec = prop.getDecorator('Output');
+
+    if (inputDec) {
+      const args = inputDec.getArguments();
+      // @Input() can take an alias string or { alias, required }
+      const required = args.length > 0
+        ? extractRequiredFromInputArgs(args[0])
+        : false;
+
+      inputs.push({
+        name: prop.getName(),
+        type: safeTypeText(prop.getType().getText()),
+        required,
+      });
+    }
+
+    if (outputDec) {
+      outputs.push({
+        name: prop.getName(),
+        type: safeTypeText(prop.getType().getText()),
+      });
+    }
+  }
+
+  // Support signal-based inputs: input() / input.required()
+  for (const prop of cls.getProperties()) {
+    const initializer = prop.getInitializer();
+    if (!initializer) continue;
+    const text = initializer.getText();
+    if (text.startsWith('input(') || text.startsWith('input.required(')) {
+      const alreadyAdded = inputs.some(i => i.name === prop.getName());
+      if (!alreadyAdded) {
+        inputs.push({
+          name: prop.getName(),
+          type: safeTypeText(prop.getType().getText()),
+          required: text.startsWith('input.required('),
+        });
+      }
+    }
+    if (text.startsWith('output(')) {
+      const alreadyAdded = outputs.some(o => o.name === prop.getName());
+      if (!alreadyAdded) {
+        outputs.push({
+          name: prop.getName(),
+          type: safeTypeText(prop.getType().getText()),
+        });
+      }
+    }
+  }
+}
+
+function extractRequiredFromInputArgs(arg: Node): boolean {
+  if (Node.isObjectLiteralExpression(arg)) {
+    const reqProp = arg.getProperty('required');
+    if (reqProp && Node.isPropertyAssignment(reqProp)) {
+      return (reqProp as PropertyAssignment).getInitializer()?.getText() === 'true';
+    }
+  }
+  return false;
+}
+
+function collectDecoratorInputsOutputs(
+  meta: ObjectLiteralExpression,
+  inputs: InputInfo[],
+  outputs: OutputInfo[]
+): void {
+  // @Component({ inputs: ['foo', 'bar'] })
+  const inputsProp = meta.getProperty('inputs');
+  if (inputsProp && Node.isPropertyAssignment(inputsProp)) {
+    const arr = (inputsProp as PropertyAssignment).getInitializer();
+    if (arr && Node.isArrayLiteralExpression(arr)) {
+      for (const el of arr.getElements()) {
+        const name = el.getText().replace(/^['"`]|['"`]$/g, '').split(':')[0].trim();
+        if (name && !inputs.some(i => i.name === name)) {
+          inputs.push({ name });
+        }
+      }
+    }
+  }
+
+  const outputsProp = meta.getProperty('outputs');
+  if (outputsProp && Node.isPropertyAssignment(outputsProp)) {
+    const arr = (outputsProp as PropertyAssignment).getInitializer();
+    if (arr && Node.isArrayLiteralExpression(arr)) {
+      for (const el of arr.getElements()) {
+        const name = el.getText().replace(/^['"`]|['"`]$/g, '').split(':')[0].trim();
+        if (name && !outputs.some(o => o.name === name)) {
+          outputs.push({ name });
+        }
+      }
+    }
+  }
+}
+
+function resolveTemplatePath(componentFilePath: string, templateUrl: string): string {
+  const dir = path.posix.dirname(componentFilePath);
+  return path.posix.normalize(path.posix.join(dir, templateUrl));
+}
+
+/** Convert "AppHeaderComponent" → "app-header" */
+function toSelector(className: string): string {
+  return className
+    .replace(/Component$/, '')
+    .replace(/([A-Z])/g, (_, c) => `-${c.toLowerCase()}`)
+    .replace(/^-/, '');
+}
+
+/**
+ * Scans a component class body for:
+ *   • this.router.navigate(['/path'])
+ *   • this.router.navigateByUrl('/path')
+ * and returns the unique route strings found.
+ */
+function collectNavigationCalls(cls: ClassDeclaration): string[] {
+  const paths: string[] = [];
+
+  cls.forEachDescendant(node => {
+    if (!Node.isCallExpression(node)) return;
+    const exprText = (node as CallExpression).getExpression().getText();
+
+    // *.navigate(['/path', ...])
+    if (/\.navigate$/.test(exprText)) {
+      const args = (node as CallExpression).getArguments();
+      if (args.length && Node.isArrayLiteralExpression(args[0])) {
+        const first = args[0].getElements()[0];
+        if (first && Node.isStringLiteral(first)) {
+          const val = first.getLiteralValue();
+          if (val) paths.push(val);
+        }
+      }
+    }
+
+    // *.navigateByUrl('/path')
+    if (/\.navigateByUrl$/.test(exprText)) {
+      const args = (node as CallExpression).getArguments();
+      if (args.length && Node.isStringLiteral(args[0])) {
+        const val = args[0].getLiteralValue();
+        if (val) paths.push(val);
+      }
+    }
+  });
+
+  return [...new Set(paths)];
+}
+
+/** Trim overly long type strings to keep output readable */
+function safeTypeText(text: string): string {
+  if (text.length > 80) return text.slice(0, 77) + '…';
+  return text;
+}
