@@ -49,6 +49,8 @@ export interface RouteInfo {
   children?: RouteInfo[];
   /** Raw loadChildren / loadComponent expression text */
   loadChildren?: string;
+  /** Absolute path of the source file where this route was defined (used to resolve relative imports) */
+  sourceFilePath?: string;
   redirectTo?: string;
   title?: string;
 }
@@ -68,6 +70,8 @@ export interface ServiceInfo {
   name: string;
   filePath: string;
   providedIn?: string;
+  /** Names of other services this service injects (service-to-service dependencies). */
+  injectedServices?: string[];
 }
 
 export interface DirectiveInfo {
@@ -115,6 +119,8 @@ export interface GraphNode {
   /** Pre-computed layout position (pixels) */
   x: number;
   y: number;
+  /** True when this service node is part of a circular dependency cycle. */
+  hasCircularDep?: boolean;
 }
 
 export type EdgeType = 'uses' | 'route' | 'child-route' | 'lazy-load' | 'navigate';

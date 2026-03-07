@@ -98,3 +98,49 @@ export function detectServiceUsages(
     }
   }
 }
+
+/**
+ * Post-processing: for each service, detect which other services it injects via
+ * inject(ServiceClass) calls or constructor parameters typed as a known service.
+ * Populates service.injectedServices in place.
+ */
+export function detectServiceToServiceUsages(
+  project: Project,
+  services: ServiceInfo[]
+): void {
+  const serviceNames = new Set(services.map(s => s.name));
+
+  for (const file of project.getSourceFiles().filter(
+    f => !f.getFilePath().includes('node_modules') && !f.getFilePath().endsWith('.spec.ts')
+  )) {
+    for (const cls of file.getClasses()) {
+      const svc = services.find(s => s.name === cls.getName());
+      if (!svc) continue;
+
+      const injected = new Set<string>();
+
+      // inject(OtherService) calls anywhere in the class body
+      cls.forEachDescendant(node => {
+        if (!Node.isCallExpression(node)) return;
+        const exprText = node.getExpression().getText();
+        if (exprText === 'inject') {
+          const args = node.getArguments();
+          if (args.length) {
+            const name = args[0].getText().trim();
+            if (serviceNames.has(name) && name !== cls.getName()) injected.add(name);
+          }
+        }
+      });
+
+      // Constructor parameter types
+      for (const ctor of cls.getConstructors()) {
+        for (const param of ctor.getParameters()) {
+          const typeText = (param.getTypeNode()?.getText() ?? '').trim();
+          if (serviceNames.has(typeText) && typeText !== cls.getName()) injected.add(typeText);
+        }
+      }
+
+      svc.injectedServices = [...injected];
+    }
+  }
+}

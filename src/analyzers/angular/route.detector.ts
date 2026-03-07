@@ -38,7 +38,7 @@ export function detectRoutes(project: Project): RouteInfo[] {
       ) {
         const init = varDecl.getInitializer();
         if (init && Node.isArrayLiteralExpression(init)) {
-          const routes = extractRoutesFromArray(init as ArrayLiteralExpression);
+          const routes = extractRoutesFromArray(init as ArrayLiteralExpression, file.getFilePath());
           allRoutes.push(...routes);
         }
       }
@@ -54,7 +54,7 @@ export function detectRoutes(project: Project): RouteInfo[] {
     for (const call of routerModuleCalls) {
       const args = call.getArguments();
       if (args.length && Node.isArrayLiteralExpression(args[0])) {
-        const routes = extractRoutesFromArray(args[0] as ArrayLiteralExpression);
+        const routes = extractRoutesFromArray(args[0] as ArrayLiteralExpression, file.getFilePath());
         allRoutes.push(...routes);
       }
     }
@@ -67,7 +67,7 @@ export function detectRoutes(project: Project): RouteInfo[] {
     for (const call of provideRouterCalls) {
       const args = call.getArguments();
       if (args.length && Node.isArrayLiteralExpression(args[0])) {
-        const routes = extractRoutesFromArray(args[0] as ArrayLiteralExpression);
+        const routes = extractRoutesFromArray(args[0] as ArrayLiteralExpression, file.getFilePath());
         allRoutes.push(...routes);
       }
     }
@@ -78,19 +78,19 @@ export function detectRoutes(project: Project): RouteInfo[] {
 
 // ─── Route extraction from AST ───────────────────────────────────────────────
 
-function extractRoutesFromArray(arr: ArrayLiteralExpression): RouteInfo[] {
+function extractRoutesFromArray(arr: ArrayLiteralExpression, sourceFilePath: string): RouteInfo[] {
   const routes: RouteInfo[] = [];
 
   for (const element of arr.getElements()) {
     if (!Node.isObjectLiteralExpression(element)) continue;
-    const route = extractRouteFromObject(element as ObjectLiteralExpression);
+    const route = extractRouteFromObject(element as ObjectLiteralExpression, sourceFilePath);
     if (route) routes.push(route);
   }
 
   return routes;
 }
 
-function extractRouteFromObject(obj: ObjectLiteralExpression): RouteInfo | null {
+function extractRouteFromObject(obj: ObjectLiteralExpression, sourceFilePath: string): RouteInfo | null {
   const pathValue = getStringProp(obj, 'path');
   // A route must at least have a path (even if it's an empty string)
   if (pathValue === undefined) return null;
@@ -130,12 +130,14 @@ function extractRouteFromObject(obj: ObjectLiteralExpression): RouteInfo | null 
       .trim();
   }
 
+  route.sourceFilePath = sourceFilePath;
+
   // children
   const childrenProp = obj.getProperty('children');
   if (childrenProp && Node.isPropertyAssignment(childrenProp)) {
     const init = (childrenProp as PropertyAssignment).getInitializer();
     if (init && Node.isArrayLiteralExpression(init)) {
-      route.children = extractRoutesFromArray(init as ArrayLiteralExpression);
+      route.children = extractRoutesFromArray(init as ArrayLiteralExpression, sourceFilePath);
     }
   }
 

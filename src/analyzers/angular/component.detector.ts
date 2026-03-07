@@ -151,6 +151,25 @@ function collectInputsOutputs(
         });
       }
     }
+
+    // Support signal-based model(): model() / model.required() — two-way binding
+    if (text.startsWith('model(') || text.startsWith('model.required(')) {
+      const alreadyAddedInput = inputs.some(i => i.name === prop.getName());
+      if (!alreadyAddedInput) {
+        inputs.push({
+          name: prop.getName(),
+          type: safeTypeText(prop.getType().getText()),
+          required: text.startsWith('model.required('),
+        });
+      }
+      const alreadyAddedOutput = outputs.some(o => o.name === prop.getName() + 'Change');
+      if (!alreadyAddedOutput) {
+        outputs.push({
+          name: prop.getName() + 'Change',
+          type: safeTypeText(prop.getType().getText()),
+        });
+      }
+    }
   }
 }
 
@@ -250,6 +269,40 @@ function collectNavigationCalls(cls: ClassDeclaration): string[] {
 
 /** Trim overly long type strings to keep output readable */
 function safeTypeText(text: string): string {
-  if (text.length > 80) return text.slice(0, 77) + '…';
-  return text;
+  const unwrapped = unwrapSignalType(text);
+  if (unwrapped.length > 80) return unwrapped.slice(0, 77) + '\u2026';
+  return unwrapped;
+}
+
+/**
+ * Strips Angular signal/emitter wrapper types to expose the inner value type.
+ * e.g. InputSignal<string> → string
+ *      OutputEmitterRef<void> → void
+ *      ModelSignal<boolean> → boolean
+ *      EventEmitter<MyEvent> → MyEvent
+ */
+function unwrapSignalType(text: string): string {
+  // First strip ts-morph import() references: import("path/to/file").TypeName → TypeName
+  // Also handles nested: import("...").Ns.TypeName → Ns.TypeName
+  let cleaned = text.replace(/import\([^)]+\)\./g, '');
+
+  const wrappers = [
+    'InputSignal', 'InputSignalWithTransform',
+    'OutputEmitterRef', 'OutputRef',
+    'ModelSignal',
+    'EventEmitter', 'Subject',
+  ];
+  for (const wrapper of wrappers) {
+    if (!cleaned.startsWith(wrapper + '<') || !cleaned.endsWith('>')) continue;
+    const inner = cleaned.slice(wrapper.length + 1, -1);
+    // Return only the first type argument (handles nested generics)
+    let depth = 0;
+    for (let i = 0; i < inner.length; i++) {
+      if (inner[i] === '<') depth++;
+      else if (inner[i] === '>') depth--;
+      else if (inner[i] === ',' && depth === 0) return inner.slice(0, i).trim();
+    }
+    return inner.trim();
+  }
+  return cleaned;
 }

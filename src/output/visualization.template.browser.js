@@ -209,6 +209,9 @@ function renderGraph() {
   nodesGrp.innerHTML = '';
   const vis = visibleSet();
 
+  // Nodes that are targeted by at least one edge (across all edges, not just visible)
+  const targetedIds = new Set(state.edges.map(e => e.target));
+
   // ── Zone backgrounds ──────────────────────────────────────────────────────────
   const flowVis = state.nodes.filter(n => vis.has(n.id) && n.lane !== 'shared');
   const compVis = state.nodes.filter(n => vis.has(n.id) && n.lane === 'shared' && n.type === 'component');
@@ -387,16 +390,48 @@ function renderGraph() {
     g.appendChild(label);
 
     // Sub-label (selector or route)
-    if (node.selector || node.route) {
+    if (node.route || node.selector) {
       const sub = svgEl('text');
       sub.setAttribute('x', 8);
       sub.setAttribute('y', 40);
       sub.setAttribute('font-size', '10');
-      sub.setAttribute('fill', c.text); 
+      sub.setAttribute('fill', c.text);
       // sub.setAttribute('opacity', '0.65');
       sub.setAttribute('pointer-events', 'none');
-      sub.textContent = truncate(node.route || node.selector || '', 22);
+      const subText = node.route ? 'route: ' + node.route
+        : node.selector === 'app-root' ? 'app-root'
+        : 'selector: ' + node.selector;
+      sub.textContent = truncate(subText, 26);
       g.appendChild(sub);
+    }
+
+    // Unused warning — shown when no other node has an edge pointing to this node
+    let extraLabelCount = 0;
+    if (node.type !== 'root' && node.selector !== 'app-root' && !targetedIds.has(node.id)) {
+      const warnY = (node.route || node.selector) ? 56 : 42;
+      const warn = svgEl('text');
+      warn.setAttribute('x', 8);
+      warn.setAttribute('y', warnY);
+      warn.setAttribute('font-size', '12');
+      warn.setAttribute('fill', '#F97316');
+      warn.setAttribute('pointer-events', 'none');
+      warn.textContent = '⚠ Unused ' + (TYPE_LABELS[node.type] || node.type);
+      g.appendChild(warn);
+      extraLabelCount++;
+    }
+
+    // Circular dependency warning — shown on service nodes part of a DI cycle
+    if (node.hasCircularDep) {
+      const baseY = (node.route || node.selector) ? 56 : 42;
+      const circY = baseY + extraLabelCount * 14;
+      const circ = svgEl('text');
+      circ.setAttribute('x', 8);
+      circ.setAttribute('y', circY);
+      circ.setAttribute('font-size', '12');
+      circ.setAttribute('fill', '#EF4444');
+      circ.setAttribute('pointer-events', 'none');
+      circ.textContent = '⚠ Circular dependency';
+      g.appendChild(circ);
     }
 
     nodesGrp.appendChild(g);
@@ -433,14 +468,16 @@ function selectNode(id) {
   if (node.inputs && node.inputs.length) {
     html += '<div class="dp-section"><div class="dp-section-title">Inputs ('+node.inputs.length+')</div>';
     node.inputs.forEach(i => {
-      html += '<span class="dp-chip" title="'+(i.type||'')+'">'+escHtml(i.name)+(i.required?'<sup style="color:#F87171">*</sup>':'')+'</span>';
+      const label = escHtml(i.name) + (i.type ? ': <span style="color:var(--text-muted)">' + escHtml(i.type) + '</span>' : '');
+      html += '<span class="dp-chip">' + label + (i.required ? '<sup style="color:#F87171">*</sup>' : '') + '</span>';
     });
     html += '</div>';
   }
   if (node.outputs && node.outputs.length) {
-    html += '<div class="dp-section"><div class="dp-section-title">Outputs ('+node.outputs.length+')</div>';
+    html += '<div class="dp-section"><div class="dp-section-title">Outputs (' + node.outputs.length + ')</div>';
     node.outputs.forEach(o => {
-      html += '<span class="dp-chip">'+escHtml(o.name)+'</span>';
+      const label = escHtml(o.name) + (o.type ? ': <span style="color:var(--text-muted)">' + escHtml(o.type) + '</span>' : '');
+      html += '<span class="dp-chip">' + label + '</span>';
     });
     html += '</div>';
   }

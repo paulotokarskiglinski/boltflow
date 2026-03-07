@@ -11,7 +11,7 @@ import { AnalysisResult, BoltflowOptions, ComponentInfo } from '../../types';
 import { detectComponents } from './component.detector';
 import { detectRoutes } from './route.detector';
 import { analyzeTemplate } from './template.analyzer';
-import { detectServices, detectServiceUsages } from './service.detector';
+import { detectServices, detectServiceUsages, detectServiceToServiceUsages } from './service.detector';
 import { detectDirectives } from './directive.detector';
 import { detectPipes } from './pipe.detector';
 
@@ -83,6 +83,9 @@ export class AngularAnalyzer implements IAnalyzer {
 
     // Populate injectedServices on each component
     detectServiceUsages(project, components, services);
+
+    // Populate injectedServices on each service (service-to-service dependencies)
+    detectServiceToServiceUsages(project, services);
 
     progress('Cross-referencing routes with components…');
     crossReferenceRoutes(routes, components);

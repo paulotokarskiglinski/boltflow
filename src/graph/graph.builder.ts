@@ -1,3 +1,4 @@
+import * as path from 'path';
 import { AnalysisResult, ComponentInfo, DirectiveInfo, FlowGraph, GraphEdge, GraphNode, NodeType, PipeInfo, RouteInfo, ServiceInfo } from '../types';
 
 
@@ -78,7 +79,7 @@ export function buildGraph(result: AnalysisResult, projectName: string): FlowGra
   attachRoutePaths(result.routes, nodeMap, result.components);
 
   // 6. Build edges from route tree
-  buildRouteEdges(result.routes, null, nodeMap, edges, result.components);
+  buildRouteEdges(result.routes, null, nodeMap, edges, result.components, result.projectRoot);
 
   // 7. Build "uses" edges from template analysis (component → child component)
   buildUsesEdges(result.components, nodeMap, edges);
@@ -86,16 +87,20 @@ export function buildGraph(result: AnalysisResult, projectName: string): FlowGra
   // 8. Build "navigate" edges (routerLink, href, router.navigate calls)
   buildNavigateEdges(result.components, nodeMap, edges);
 
-  // 9. Build "uses" edges from components to their injected services
+  // 9. Build "uses" edges from components to their injected services,
+  //    and service-to-service "uses" edges
   buildServiceEdges(result.components, result.services ?? [], nodeMap, edges);
 
-  // 10. Build "uses" edges from components to directives used in templates
+  // 10. Mark service nodes involved in circular dependency cycles
+  markCircularServiceEdges(result.services ?? [], edges, nodeMap);
+
+  // 11. Build "uses" edges from components to directives used in templates
   buildDirectiveEdges(result.components, result.directives ?? [], nodeMap, edges);
 
-  // 11. Build "uses" edges from components to pipes used in templates
+  // 12. Build "uses" edges from components to pipes used in templates
   buildPipeEdges(result.components, result.pipes ?? [], nodeMap, edges);
 
-  // 12. Ensure there are no duplicate edges
+  // 13. Ensure there are no duplicate edges
   const uniqueEdges = deduplicateEdges(edges);
 
   // 13. Compute 2-D layout
@@ -171,7 +176,8 @@ function buildRouteEdges(
   parentComponentId: string | null,
   nodeMap: Map<string, GraphNode>,
   edges: GraphEdge[],
-  components: ComponentInfo[]
+  components: ComponentInfo[],
+  projectRoot: string
 ): void {
   for (const route of routes) {
     const targetId = resolveRouteComponentId(route, components);
@@ -200,7 +206,7 @@ function buildRouteEdges(
       }
 
       if (route.children) {
-        buildRouteEdges(route.children, targetId, nodeMap, edges, components);
+        buildRouteEdges(route.children, targetId, nodeMap, edges, components, projectRoot);
       }
     } else if (route.loadChildren) {
       // Lazy-loaded module/component — represent as a virtual node.
@@ -210,11 +216,14 @@ function buildRouteEdges(
       if (sourceId) {
         const lazyId = `lazy_${route.path}`;
         if (!nodeMap.has(lazyId)) {
+          const filePath = route.sourceFilePath
+            ? resolveLoadChildrenPath(route.loadChildren, route.sourceFilePath, projectRoot)
+            : '';
           nodeMap.set(lazyId, {
             id: lazyId,
             label: `${route.path} (lazy)`,
             type: 'lazy-module',
-            filePath: '',
+            filePath,
             route: `/${route.path}`,
             x: 0,
             y: 0,
@@ -229,9 +238,30 @@ function buildRouteEdges(
         });
       }
     } else if (route.children && targetId) {
-      buildRouteEdges(route.children, targetId, nodeMap, edges, components);
+      buildRouteEdges(route.children, targetId, nodeMap, edges, components, projectRoot);
     }
   }
+}
+
+/**
+ * Resolves the file path of a lazy-loaded module/component from the raw
+ * loadChildren/loadComponent expression text.
+ * e.g. `() => import('./features/home/home.component').then(m => m.HomeComponent)`
+ *      → 'features/home/home.component.ts'
+ */
+function resolveLoadChildrenPath(
+  loadChildren: string,
+  sourceFilePath: string,
+  projectRoot: string
+): string {
+  const m = loadChildren.match(/import\(['"\`]([^'"\`]+)['"\`]\)/);
+  if (!m) return '';
+  const importSpecifier = m[1];
+  if (!importSpecifier.startsWith('.')) return importSpecifier; // bare module, can't resolve
+  const sourceDir = path.dirname(sourceFilePath);
+  let resolved = path.resolve(sourceDir, importSpecifier);
+  if (!path.extname(resolved)) resolved += '.ts';
+  return path.relative(projectRoot, resolved).replace(/\\/g, '/');
 }
 
 function resolveRouteComponentId(
@@ -345,6 +375,8 @@ function buildServiceEdges(
   edges: GraphEdge[]
 ): void {
   const serviceByName = new Map(services.map(s => [s.name, s.id]));
+
+  // Component → service edges
   for (const comp of components) {
     if (!nodeMap.has(comp.id)) continue;
     for (const svcName of (comp.injectedServices ?? [])) {
@@ -352,6 +384,70 @@ function buildServiceEdges(
       if (!targetId || !nodeMap.has(targetId)) continue;
       edges.push({ id: edgeId(), source: comp.id, target: targetId, type: 'uses' });
     }
+  }
+
+  // Service → service edges
+  for (const svc of services) {
+    if (!nodeMap.has(svc.id)) continue;
+    for (const depName of (svc.injectedServices ?? [])) {
+      const targetId = serviceByName.get(depName);
+      if (!targetId || !nodeMap.has(targetId)) continue;
+      edges.push({ id: edgeId(), source: svc.id, target: targetId, type: 'uses' });
+    }
+  }
+}
+
+/**
+ * DFS over the service dependency graph to detect cycles.
+ * Every service node involved in a cycle gets hasCircularDep = true.
+ * Edges are left as normal 'uses' so layout/lanes are unaffected.
+ */
+function markCircularServiceEdges(
+  services: ServiceInfo[],
+  edges: GraphEdge[],
+  nodeMap: Map<string, GraphNode>
+): void {
+  const serviceIds = new Set(services.map(s => s.id));
+
+  // Build adjacency list for service→service edges only
+  const adj = new Map<string, string[]>();
+  for (const edge of edges) {
+    if (!serviceIds.has(edge.source) || !serviceIds.has(edge.target)) continue;
+    if (!adj.has(edge.source)) adj.set(edge.source, []);
+    adj.get(edge.source)!.push(edge.target);
+  }
+
+  // Three-color DFS: WHITE=0 (unvisited), GRAY=1 (in stack), BLACK=2 (done)
+  const WHITE = 0, GRAY = 1, BLACK = 2;
+  const color = new Map<string, number>();
+  for (const id of serviceIds) color.set(id, WHITE);
+
+  // Track DFS stack to mark all nodes in a cycle, not just the back-edge endpoints
+  const stack: string[] = [];
+
+  function dfs(nodeId: string): void {
+    color.set(nodeId, GRAY);
+    stack.push(nodeId);
+    for (const targetId of (adj.get(nodeId) ?? [])) {
+      if (color.get(targetId) === GRAY) {
+        // Back edge — mark every node from the cycle entry point to the current node
+        const cycleStart = stack.indexOf(targetId);
+        for (let i = cycleStart; i < stack.length; i++) {
+          const n = nodeMap.get(stack[i]);
+          if (n) n.hasCircularDep = true;
+        }
+        const targetNode = nodeMap.get(targetId);
+        if (targetNode) targetNode.hasCircularDep = true;
+      } else if (color.get(targetId) === WHITE) {
+        dfs(targetId);
+      }
+    }
+    stack.pop();
+    color.set(nodeId, BLACK);
+  }
+
+  for (const id of serviceIds) {
+    if (color.get(id) === WHITE) dfs(id);
   }
 }
 
