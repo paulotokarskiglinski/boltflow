@@ -5,18 +5,18 @@
 // ════════════════════════════════════════════════════════════════════════════
 const GRAPH = __DATA__;
 
-const NODE_W = 180, NODE_H = 64, CORNER = 8;
+const NODE_W = 180, NODE_H = 64, CORNER = 4;
 const COLORS = {
-  root:         { bg:'#7C3AED', border:'#6D28D9', text:'#fafafa' },
-  component:    { bg:'#059669', border:'#047857', text:'#fafafa' },
+  root:         { bg:'#FA5252', border:'#FA5252', text:'#fafafa' },
+  component:    { bg:'#1976D2', border:'#1976D2', text:'#fafafa' },
   module:       { bg:'#D97706', border:'#B45309', text:'#fafafa' },
-  'lazy-module':{ bg:'#FBBF24', border:'#FBBF24', text:'#fafafa' },
-  service:      { bg:'#0891B2', border:'#0E7490', text:'#fafafa' },
-  directive:    { bg:'#4F46E5', border:'#4338CA', text:'#fafafa' },
-  pipe:         { bg:'#DB2777', border:'#BE185D', text:'#fafafa' },
+  'lazy-module':{ bg:'#64748B', border:'#64748B', text:'#fafafa' },
+  service:      { bg:'#FFCA28', border:'#FFCA28', text:'#fafafa' },
+  directive:    { bg:'#AB47BC', border:'#AB47BC', text:'#fafafa' },
+  pipe:         { bg:'#00897B', border:'#00897B', text:'#fafafa' },
 };
-const TYPE_ICON  = { root:'⚡', component:'🧩', module:'📦', 'lazy-module':'⏱', service:'⚙', directive:'🔧', pipe:'🪄' };
-const EDGE_COLOR = { uses:'#94A3B8', route:'#3B82F6', 'child-route':'#60A5FA', 'lazy-load':'#FBBF24', navigate:'#EC4899' };
+const ROOT_ICON  = '⚡';
+const EDGE_COLOR = { uses:'#94A3B8', route:'#3B82F6', 'child-route':'#60A5FA', 'lazy-load':'#64748B', navigate:'#EC4899' };
 const EDGE_DASH  = { uses:'none', route:'6,3', 'child-route':'4,2', 'lazy-load':'8,4', navigate:'3,3' };
 const EDGE_WIDTH = { uses:1.5, route:2, 'child-route':1.5, 'lazy-load':2, navigate:1.5 };
 
@@ -96,6 +96,15 @@ function buildDefs() {
     marker.appendChild(poly);
     defs.appendChild(marker);
   });
+
+  // Angular logo symbol (reused for every non-root node)
+  const sym = document.createElementNS('http://www.w3.org/2000/svg','symbol');
+  sym.setAttribute('id','icon-angular');
+  sym.setAttribute('viewBox','0 0 24 24');
+  const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+  p.setAttribute('d','M9.87 2.5 3.022 5.666l.645 10.178zm4.26 0 6.202 13.344.645-10.178zM12 7.563l-2.451 5.964h4.906zm-3.73 8.959-.954 2.308L12 21.5l4.683-2.67-.953-2.308z');
+  sym.appendChild(p);
+  defs.appendChild(sym);
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -130,18 +139,18 @@ function toggleFilter(type, chip) {
 // ════════════════════════════════════════════════════════════════════════════
 function buildLegend() {
   const nodeTypes = [
-    { label:'Root',      color:'#7C3AED' },
-    { label:'Component', color:'#059669' },
-    { label:'Lazy',      color:'#FBBF24' },
-    { label:'Service',   color:'#0891B2' },
-    { label:'Directive', color:'#4F46E5' },
-    { label:'Pipe',      color:'#DB2777' },
+    { label:'Root',      color:'#FA5252' },
+    { label:'Component', color:'#1976d2' },
+    { label:'Lazy',      color:'#64748B' },
+    { label:'Service',   color:'#ffca28' },
+    { label:'Directive', color:'#ab47bc' },
+    { label:'Pipe',      color:'#00897b' },
   ];
   const edgeTypes = [
     { label:'Uses',        color:'#94A3B8', dash:false },
     { label:'Route',       color:'#3B82F6', dash:true },
     { label:'Child route', color:'#60A5FA', dash:true },
-    { label:'Lazy load',   color:'#FBBF24', dash:true },
+    { label:'Lazy load',   color:'#64748B', dash:true },
     { label:'Navigate',    color:'#EC4899', dash:true },
   ];
   let html = '<div style="font-size:.7rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Legend</div>';
@@ -217,7 +226,7 @@ function renderGraph() {
     const bg = svgEl('rect');
     bg.setAttribute('x', x1); bg.setAttribute('y', y1);
     bg.setAttribute('width', x2 - x1); bg.setAttribute('height', y2 - y1);
-    bg.setAttribute('rx', '14');
+    bg.setAttribute('rx', '4');
     bg.setAttribute('fill', fill);
     bg.setAttribute('stroke', stroke); bg.setAttribute('stroke-width', '1');
     bg.setAttribute('pointer-events', 'none');
@@ -232,11 +241,11 @@ function renderGraph() {
     zonesGrp.appendChild(lbl);
   }
 
-  drawZone(flowVis, 'NAVIGATION FLOW', 'rgba(59,130,246,0.07)',  'rgba(59,130,246,0.30)');
-  drawZone(compVis, 'COMPONENTS',      'rgba(5,150,105,0.07)',   'rgba(5,150,105,0.30)');
-  drawZone(svcVis,  'SERVICES',        'rgba(8,145,178,0.07)',   'rgba(8,145,178,0.30)');
-  drawZone(dirVis,  'DIRECTIVES',      'rgba(79,70,229,0.07)',   'rgba(79,70,229,0.30)');
-  drawZone(pipeVis, 'PIPES',           'rgba(219,39,119,0.07)',  'rgba(219,39,119,0.30)');
+  drawZone(flowVis, 'NAVIGATION FLOW', 'rgba(204, 204, 204, 0.05)',  'rgb(204 204 204)');
+  drawZone(compVis, 'COMPONENTS',      'rgba(25, 118, 210, 0.05)',   'rgb(25, 118, 210)');
+  drawZone(svcVis,  'SERVICES',        'rgba(255, 202, 40, 0.05)',   'rgb(255, 202, 40)');
+  drawZone(dirVis,  'DIRECTIVES',      'rgba(171, 71, 188, 0.05)',   'rgb(171, 71, 188)');
+  drawZone(pipeVis, 'PIPES',           'rgba(0, 137, 123, 0.05)',  'rgb(0, 137, 123)');
 
   // ── Focus set: selected node + its direct neighbours via any edge ────────────
   // Nodes/edges outside this set are dimmed when something is selected.
@@ -342,33 +351,37 @@ function renderGraph() {
     const rect = svgEl('rect');
     rect.setAttribute('width', NODE_W); rect.setAttribute('height', NODE_H);
     rect.setAttribute('rx', CORNER);
-    rect.setAttribute('fill', c.bg);
+    // rect.setAttribute('fill', c.bg);
+    rect.setAttribute('fill', '#19191a');
     rect.setAttribute('stroke', c.border);
     rect.setAttribute('stroke-width', isSelected ? '2' : '1');
     g.appendChild(rect);
 
     // Top color bar
-    const bar = svgEl('rect');
-    bar.setAttribute('width', NODE_W); bar.setAttribute('height', '4');
-    bar.setAttribute('rx', CORNER);
-    bar.setAttribute('fill', c.border);
-    bar.setAttribute('opacity', '0.6');
-    g.appendChild(bar);
+    // const bar = svgEl('rect');
+    // bar.setAttribute('width', NODE_W); bar.setAttribute('height', '4');
+    // bar.setAttribute('rx', CORNER);
+    // bar.setAttribute('fill', c.border);
+    // bar.setAttribute('opacity', '0.6');
+    // g.appendChild(bar);
 
     // Icon + label
-    const icon = svgEl('text');
-    icon.setAttribute('x', 12); icon.setAttribute('y', 30);
-    icon.setAttribute('font-size', '14');
-    icon.setAttribute('fill', c.text); icon.setAttribute('opacity', '0.8');
+    const icon = svgEl('use');
+    icon.setAttribute('href', '#icon-angular');
+    icon.setAttribute('x', 6);
+    icon.setAttribute('y', 12);
+    icon.setAttribute('width', '16');
+    icon.setAttribute('height', '16');
     icon.setAttribute('pointer-events', 'none');
-    icon.textContent = TYPE_ICON[node.type] || '🔷';
+    icon.setAttribute('fill', c.border);
     g.appendChild(icon);
 
     const label = svgEl('text');
-    label.setAttribute('x', 32); label.setAttribute('y', 30);
+    label.setAttribute('x', 32);
+    label.setAttribute('y', 24);
     label.setAttribute('font-size', '12');
     label.setAttribute('font-weight', '600');
-    label.setAttribute('fill', c.text);
+    label.setAttribute('fill', c.border);
     label.setAttribute('pointer-events', 'none');
     label.textContent = truncate(node.label, 18);
     g.appendChild(label);
@@ -376,9 +389,11 @@ function renderGraph() {
     // Sub-label (selector or route)
     if (node.selector || node.route) {
       const sub = svgEl('text');
-      sub.setAttribute('x', 32); sub.setAttribute('y', 48);
+      sub.setAttribute('x', 8);
+      sub.setAttribute('y', 40);
       sub.setAttribute('font-size', '10');
-      sub.setAttribute('fill', c.text); sub.setAttribute('opacity', '0.65');
+      sub.setAttribute('fill', c.text); 
+      // sub.setAttribute('opacity', '0.65');
       sub.setAttribute('pointer-events', 'none');
       sub.textContent = truncate(node.route || node.selector || '', 22);
       g.appendChild(sub);

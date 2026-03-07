@@ -21,8 +21,8 @@
   --text: #E2E8F0;
   --text-muted: #94A3B8;
   --accent: #38BDF8;
-  --c-root: #7C3AED;
-  --c-root-b: #6D28D9;
+  --c-root: #FA5252;
+  --c-root-b: #FA5252;
   --c-comp: #059669;
   --c-comp-b: #047857;
   --c-module: #D97706;
@@ -256,7 +256,13 @@ header {
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: var(--bg)
+  background-color: var(--bg);
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 24px 24px
+}
+
+body.light .canvas-wrap {
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.1) 1px, transparent 1px)
 }
 
 #graph {
@@ -548,20 +554,20 @@ body.light {
 // ════════════════════════════════════════════════════════════════════════════
 // DATA
 // ════════════════════════════════════════════════════════════════════════════
-const GRAPH = {"nodes":[{"id":"cmp_1","label":"AppComponent","type":"root","filePath":"src/app/app.ts","selector":"app-root","inputs":[],"outputs":[],"isStandalone":true,"x":140,"y":513,"lane":"flow"},{"id":"cmp_2","label":"DashboardComponent","type":"component","filePath":"src/app/dashboard/dashboard.ts","selector":"app-dashboard","inputs":[{"name":"userId","type":"string","required":false},{"name":"showCharts","type":"boolean","required":false}],"outputs":[],"isStandalone":true,"x":420,"y":171,"route":"/dashboard","lane":"flow"},{"id":"cmp_3","label":"HelpComponent","type":"component","filePath":"src/app/help/help.ts","selector":"app-help","inputs":[],"outputs":[],"isStandalone":true,"x":420,"y":285,"route":"/help","lane":"flow"},{"id":"cmp_4","label":"HomeComponent","type":"component","filePath":"src/app/home/home.ts","selector":"app-home","inputs":[{"name":"title","type":"string","required":false}],"outputs":[{"name":"visited","type":"import(\"C:/Users/User/Projetos/demo-app-21-v2/node_modules/@angular/core/type…"}],"isStandalone":true,"x":420,"y":399,"route":"/","lane":"flow"},{"id":"cmp_5","label":"ProfileComponent","type":"component","filePath":"src/app/profile/profile.ts","selector":"app-profile","inputs":[{"name":"username","type":"string","required":false}],"outputs":[{"name":"logout","type":"import(\"C:/Users/User/Projetos/demo-app-21-v2/node_modules/@angular/core/type…"}],"isStandalone":true,"x":420,"y":513,"route":"/profile","lane":"flow"},{"id":"cmp_6","label":"AdminDashboardComponent","type":"component","filePath":"src/app/admin/admin-dashboard/admin-dashboard.ts","selector":"app-admin-dashboard","inputs":[{"name":"adminLevel","type":"number","required":false}],"outputs":[],"isStandalone":true,"x":420,"y":627,"route":"/","lane":"flow"},{"id":"cmp_7","label":"UsersComponent","type":"component","filePath":"src/app/admin/users/users.ts","selector":"app-users","inputs":[{"name":"users","type":"string[]","required":false}],"outputs":[],"isStandalone":true,"x":420,"y":741,"route":"/users","lane":"flow"},{"id":"cmp_8","label":"ChartsComponent","type":"component","filePath":"src/app/dashboard/charts/charts.ts","selector":"app-charts","inputs":[{"name":"chartType","type":"string","required":false}],"outputs":[{"name":"chartClick","type":"import(\"C:/Users/User/Projetos/demo-app-21-v2/node_modules/@angular/core/type…"}],"isStandalone":true,"x":700,"y":399,"route":"/dashboard/charts","lane":"flow"},{"id":"cmp_9","label":"StatsComponent","type":"component","filePath":"src/app/dashboard/stats/stats.ts","selector":"app-stats","inputs":[{"name":"data","type":"any[]","required":false}],"outputs":[],"isStandalone":true,"x":700,"y":513,"route":"/dashboard/stats","lane":"flow"},{"id":"cmp_10","label":"SettingsComponent","type":"component","filePath":"src/app/profile/settings/settings.ts","selector":"app-settings","inputs":[{"name":"theme","type":"\"dark\" | \"light\"","required":false}],"outputs":[],"isStandalone":true,"x":700,"y":627,"route":"/profile/settings","lane":"flow"},{"id":"cmp_11","label":"ButtonComponent","type":"component","filePath":"src/app/shared/button/button.ts","selector":"app-button","inputs":[{"name":"label","type":"string","required":false},{"name":"disabled","type":"boolean","required":false},{"name":"variant","type":"\"primary\" | \"secondary\"","required":false}],"outputs":[{"name":"clicked","type":"import(\"C:/Users/User/Projetos/demo-app-21-v2/node_modules/@angular/core/type…"}],"isStandalone":true,"x":140,"y":987,"lane":"shared"},{"id":"cmp_12","label":"CardComponent","type":"component","filePath":"src/app/shared/card/card.ts","selector":"app-card","inputs":[{"name":"title","type":"string","required":false},{"name":"subtitle","type":"string","required":false},{"name":"elevated","type":"boolean","required":false}],"outputs":[{"name":"cardClick","type":"import(\"C:/Users/User/Projetos/demo-app-21-v2/node_modules/@angular/core/type…"}],"isStandalone":true,"x":140,"y":1101,"lane":"shared"},{"id":"cmp_13","label":"ChartPlaceholderComponent","type":"component","filePath":"src/app/shared/chart-placeholder/chart-placeholder.ts","selector":"app-chart-placeholder","inputs":[{"name":"type","type":"string","required":false},{"name":"height","type":"number","required":false}],"outputs":[],"isStandalone":true,"x":140,"y":1215,"lane":"shared"},{"id":"svc_1","label":"AuthService","type":"service","filePath":"src/app/services/auth.service.ts","x":420,"y":987,"lane":"shared"},{"id":"svc_2","label":"ThemeService","type":"service","filePath":"src/app/services/theme.service.ts","x":420,"y":1101,"lane":"shared"},{"id":"svc_3","label":"UserService","type":"service","filePath":"src/app/services/user.service.ts","x":420,"y":1215,"lane":"shared"},{"id":"dir_1","label":"HighlightDirective","type":"directive","filePath":"src/app/shared/directives/highlight.directive.ts","selector":"[appHighlight]","x":700,"y":987,"lane":"shared"},{"id":"dir_2","label":"TooltipDirective","type":"directive","filePath":"src/app/shared/directives/tooltip.directive.ts","selector":"[appTooltip]","x":700,"y":1101,"lane":"shared"},{"id":"pipe_1","label":"TruncatePipe","type":"pipe","filePath":"src/app/shared/pipes/truncate.pipe.ts","selector":"truncate","x":980,"y":987,"lane":"shared"},{"id":"lazy_admin","label":"admin (lazy)","type":"lazy-module","filePath":"","route":"/admin","x":420,"y":855,"lane":"flow"}],"edges":[{"id":"e1","source":"cmp_1","target":"cmp_4","type":"route","label":"/"},{"id":"e2","source":"cmp_1","target":"cmp_2","type":"route","label":"/dashboard"},{"id":"e3","source":"cmp_2","target":"cmp_9","type":"child-route","label":"/stats"},{"id":"e4","source":"cmp_2","target":"cmp_8","type":"child-route","label":"/charts"},{"id":"e5","source":"cmp_1","target":"cmp_5","type":"route","label":"/profile"},{"id":"e6","source":"cmp_5","target":"cmp_10","type":"child-route","label":"/settings"},{"id":"e7","source":"cmp_1","target":"lazy_admin","type":"lazy-load","label":"/admin"},{"id":"e8","source":"cmp_1","target":"cmp_3","type":"route","label":"/help"},{"id":"e9","source":"cmp_1","target":"cmp_6","type":"route","label":"/"},{"id":"e10","source":"cmp_1","target":"cmp_7","type":"route","label":"/users"},{"id":"e11","source":"cmp_2","target":"cmp_12","type":"uses"},{"id":"e12","source":"cmp_2","target":"cmp_13","type":"uses"},{"id":"e13","source":"cmp_2","target":"cmp_11","type":"uses"},{"id":"e14","source":"cmp_3","target":"cmp_12","type":"uses"},{"id":"e15","source":"cmp_4","target":"cmp_12","type":"uses"},{"id":"e16","source":"cmp_4","target":"cmp_11","type":"uses"},{"id":"e17","source":"cmp_5","target":"cmp_12","type":"uses"},{"id":"e18","source":"cmp_5","target":"cmp_11","type":"uses"},{"id":"e19","source":"cmp_6","target":"cmp_12","type":"uses"},{"id":"e20","source":"cmp_6","target":"cmp_11","type":"uses"},{"id":"e21","source":"cmp_7","target":"cmp_12","type":"uses"},{"id":"e22","source":"cmp_8","target":"cmp_13","type":"uses"},{"id":"e23","source":"cmp_9","target":"cmp_12","type":"uses"},{"id":"e24","source":"cmp_10","target":"cmp_11","type":"uses"},{"id":"e25","source":"cmp_1","target":"cmp_6","type":"navigate","label":"/"},{"id":"e26","source":"cmp_1","target":"cmp_2","type":"navigate","label":"/dashboard"},{"id":"e27","source":"cmp_1","target":"cmp_5","type":"navigate","label":"/profile"},{"id":"e28","source":"cmp_1","target":"lazy_admin","type":"navigate","label":"/admin"},{"id":"e29","source":"cmp_1","target":"cmp_3","type":"navigate","label":"/help"},{"id":"e30","source":"cmp_2","target":"cmp_5","type":"navigate","label":"/profile"},{"id":"e31","source":"cmp_2","target":"cmp_9","type":"navigate","label":"/dashboard/stats"},{"id":"e32","source":"cmp_3","target":"cmp_6","type":"navigate","label":"/"},{"id":"e33","source":"cmp_4","target":"cmp_2","type":"navigate","label":"/dashboard"},{"id":"e34","source":"cmp_5","target":"cmp_2","type":"navigate","label":"/dashboard"},{"id":"e35","source":"cmp_2","target":"svc_2","type":"uses"},{"id":"e36","source":"cmp_4","target":"svc_3","type":"uses"},{"id":"e37","source":"cmp_5","target":"svc_1","type":"uses"},{"id":"e38","source":"cmp_2","target":"dir_2","type":"uses"},{"id":"e39","source":"cmp_4","target":"dir_1","type":"uses"},{"id":"e40","source":"cmp_4","target":"pipe_1","type":"uses"}],"metadata":{"framework":"angular","projectName":"demo-app-21-v2","generatedAt":"2026-03-05T23:30:34.106Z","projectRoot":"C:\\Users\\User\\Projetos\\demo-app-21-v2","totalComponents":20,"totalRoutes":10}};
+const GRAPH = {"nodes":[{"id":"cmp_1","label":"AppComponent","type":"root","filePath":"src/app/app.ts","selector":"app-root","inputs":[],"outputs":[],"isStandalone":true,"x":140,"y":513,"lane":"flow"},{"id":"cmp_2","label":"DashboardComponent","type":"component","filePath":"src/app/dashboard/dashboard.ts","selector":"app-dashboard","inputs":[{"name":"userId","type":"string","required":false},{"name":"showCharts","type":"boolean","required":false}],"outputs":[],"isStandalone":true,"x":420,"y":171,"route":"/dashboard","lane":"flow"},{"id":"cmp_3","label":"HelpComponent","type":"component","filePath":"src/app/help/help.ts","selector":"app-help","inputs":[],"outputs":[],"isStandalone":true,"x":420,"y":285,"route":"/help","lane":"flow"},{"id":"cmp_4","label":"HomeComponent","type":"component","filePath":"src/app/home/home.ts","selector":"app-home","inputs":[{"name":"title","type":"string","required":false}],"outputs":[{"name":"visited","type":"import(\"C:/Users/User/Projetos/demo-app-21-v2/node_modules/@angular/core/type…"}],"isStandalone":true,"x":420,"y":399,"route":"/","lane":"flow"},{"id":"cmp_5","label":"ProfileComponent","type":"component","filePath":"src/app/profile/profile.ts","selector":"app-profile","inputs":[{"name":"username","type":"string","required":false}],"outputs":[{"name":"logout","type":"import(\"C:/Users/User/Projetos/demo-app-21-v2/node_modules/@angular/core/type…"}],"isStandalone":true,"x":420,"y":513,"route":"/profile","lane":"flow"},{"id":"cmp_6","label":"AdminDashboardComponent","type":"component","filePath":"src/app/admin/admin-dashboard/admin-dashboard.ts","selector":"app-admin-dashboard","inputs":[{"name":"adminLevel","type":"number","required":false}],"outputs":[],"isStandalone":true,"x":420,"y":627,"route":"/","lane":"flow"},{"id":"cmp_7","label":"UsersComponent","type":"component","filePath":"src/app/admin/users/users.ts","selector":"app-users","inputs":[{"name":"users","type":"string[]","required":false}],"outputs":[],"isStandalone":true,"x":420,"y":741,"route":"/users","lane":"flow"},{"id":"cmp_8","label":"ChartsComponent","type":"component","filePath":"src/app/dashboard/charts/charts.ts","selector":"app-charts","inputs":[{"name":"chartType","type":"string","required":false}],"outputs":[{"name":"chartClick","type":"import(\"C:/Users/User/Projetos/demo-app-21-v2/node_modules/@angular/core/type…"}],"isStandalone":true,"x":700,"y":399,"route":"/dashboard/charts","lane":"flow"},{"id":"cmp_9","label":"StatsComponent","type":"component","filePath":"src/app/dashboard/stats/stats.ts","selector":"app-stats","inputs":[{"name":"data","type":"any[]","required":false}],"outputs":[],"isStandalone":true,"x":700,"y":513,"route":"/dashboard/stats","lane":"flow"},{"id":"cmp_10","label":"SettingsComponent","type":"component","filePath":"src/app/profile/settings/settings.ts","selector":"app-settings","inputs":[{"name":"theme","type":"\"dark\" | \"light\"","required":false}],"outputs":[],"isStandalone":true,"x":700,"y":627,"route":"/profile/settings","lane":"flow"},{"id":"cmp_11","label":"ButtonComponent","type":"component","filePath":"src/app/shared/button/button.ts","selector":"app-button","inputs":[{"name":"label","type":"string","required":false},{"name":"disabled","type":"boolean","required":false},{"name":"variant","type":"\"primary\" | \"secondary\"","required":false}],"outputs":[{"name":"clicked","type":"import(\"C:/Users/User/Projetos/demo-app-21-v2/node_modules/@angular/core/type…"}],"isStandalone":true,"x":140,"y":987,"lane":"shared"},{"id":"cmp_12","label":"CardComponent","type":"component","filePath":"src/app/shared/card/card.ts","selector":"app-card","inputs":[{"name":"title","type":"string","required":false},{"name":"subtitle","type":"string","required":false},{"name":"elevated","type":"boolean","required":false}],"outputs":[{"name":"cardClick","type":"import(\"C:/Users/User/Projetos/demo-app-21-v2/node_modules/@angular/core/type…"}],"isStandalone":true,"x":140,"y":1101,"lane":"shared"},{"id":"cmp_13","label":"ChartPlaceholderComponent","type":"component","filePath":"src/app/shared/chart-placeholder/chart-placeholder.ts","selector":"app-chart-placeholder","inputs":[{"name":"type","type":"string","required":false},{"name":"height","type":"number","required":false}],"outputs":[],"isStandalone":true,"x":140,"y":1215,"lane":"shared"},{"id":"svc_1","label":"AuthService","type":"service","filePath":"src/app/services/auth.service.ts","x":420,"y":987,"lane":"shared"},{"id":"svc_2","label":"ThemeService","type":"service","filePath":"src/app/services/theme.service.ts","x":420,"y":1101,"lane":"shared"},{"id":"svc_3","label":"UserService","type":"service","filePath":"src/app/services/user.service.ts","x":420,"y":1215,"lane":"shared"},{"id":"dir_1","label":"HighlightDirective","type":"directive","filePath":"src/app/shared/directives/highlight.directive.ts","selector":"[appHighlight]","x":700,"y":987,"lane":"shared"},{"id":"dir_2","label":"TooltipDirective","type":"directive","filePath":"src/app/shared/directives/tooltip.directive.ts","selector":"[appTooltip]","x":700,"y":1101,"lane":"shared"},{"id":"pipe_1","label":"TruncatePipe","type":"pipe","filePath":"src/app/shared/pipes/truncate.pipe.ts","selector":"truncate","x":980,"y":987,"lane":"shared"},{"id":"lazy_admin","label":"admin (lazy)","type":"lazy-module","filePath":"","route":"/admin","x":420,"y":855,"lane":"flow"}],"edges":[{"id":"e1","source":"cmp_1","target":"cmp_4","type":"route","label":"/"},{"id":"e2","source":"cmp_1","target":"cmp_2","type":"route","label":"/dashboard"},{"id":"e3","source":"cmp_2","target":"cmp_9","type":"child-route","label":"/stats"},{"id":"e4","source":"cmp_2","target":"cmp_8","type":"child-route","label":"/charts"},{"id":"e5","source":"cmp_1","target":"cmp_5","type":"route","label":"/profile"},{"id":"e6","source":"cmp_5","target":"cmp_10","type":"child-route","label":"/settings"},{"id":"e7","source":"cmp_1","target":"lazy_admin","type":"lazy-load","label":"/admin"},{"id":"e8","source":"cmp_1","target":"cmp_3","type":"route","label":"/help"},{"id":"e9","source":"cmp_1","target":"cmp_6","type":"route","label":"/"},{"id":"e10","source":"cmp_1","target":"cmp_7","type":"route","label":"/users"},{"id":"e11","source":"cmp_2","target":"cmp_12","type":"uses"},{"id":"e12","source":"cmp_2","target":"cmp_13","type":"uses"},{"id":"e13","source":"cmp_2","target":"cmp_11","type":"uses"},{"id":"e14","source":"cmp_3","target":"cmp_12","type":"uses"},{"id":"e15","source":"cmp_4","target":"cmp_12","type":"uses"},{"id":"e16","source":"cmp_4","target":"cmp_11","type":"uses"},{"id":"e17","source":"cmp_5","target":"cmp_12","type":"uses"},{"id":"e18","source":"cmp_5","target":"cmp_11","type":"uses"},{"id":"e19","source":"cmp_6","target":"cmp_12","type":"uses"},{"id":"e20","source":"cmp_6","target":"cmp_11","type":"uses"},{"id":"e21","source":"cmp_7","target":"cmp_12","type":"uses"},{"id":"e22","source":"cmp_8","target":"cmp_13","type":"uses"},{"id":"e23","source":"cmp_9","target":"cmp_12","type":"uses"},{"id":"e24","source":"cmp_10","target":"cmp_11","type":"uses"},{"id":"e25","source":"cmp_1","target":"cmp_6","type":"navigate","label":"/"},{"id":"e26","source":"cmp_1","target":"cmp_2","type":"navigate","label":"/dashboard"},{"id":"e27","source":"cmp_1","target":"cmp_5","type":"navigate","label":"/profile"},{"id":"e28","source":"cmp_1","target":"lazy_admin","type":"navigate","label":"/admin"},{"id":"e29","source":"cmp_1","target":"cmp_3","type":"navigate","label":"/help"},{"id":"e30","source":"cmp_2","target":"cmp_5","type":"navigate","label":"/profile"},{"id":"e31","source":"cmp_2","target":"cmp_9","type":"navigate","label":"/dashboard/stats"},{"id":"e32","source":"cmp_3","target":"cmp_6","type":"navigate","label":"/"},{"id":"e33","source":"cmp_4","target":"cmp_2","type":"navigate","label":"/dashboard"},{"id":"e34","source":"cmp_5","target":"cmp_2","type":"navigate","label":"/dashboard"},{"id":"e35","source":"cmp_2","target":"svc_2","type":"uses"},{"id":"e36","source":"cmp_4","target":"svc_3","type":"uses"},{"id":"e37","source":"cmp_5","target":"svc_1","type":"uses"},{"id":"e38","source":"cmp_2","target":"dir_2","type":"uses"},{"id":"e39","source":"cmp_4","target":"dir_1","type":"uses"},{"id":"e40","source":"cmp_4","target":"pipe_1","type":"uses"}],"metadata":{"framework":"angular","projectName":"demo-app-21-v2","generatedAt":"2026-03-07T00:07:03.244Z","projectRoot":"C:\\Users\\User\\Projetos\\demo-app-21-v2","totalComponents":20,"totalRoutes":10}};
 
-const NODE_W = 180, NODE_H = 64, CORNER = 8;
+const NODE_W = 180, NODE_H = 64, CORNER = 4;
 const COLORS = {
-  root:         { bg:'#7C3AED', border:'#6D28D9', text:'#fafafa' },
-  component:    { bg:'#059669', border:'#047857', text:'#fafafa' },
+  root:         { bg:'#FA5252', border:'#FA5252', text:'#fafafa' },
+  component:    { bg:'#1976D2', border:'#1976D2', text:'#fafafa' },
   module:       { bg:'#D97706', border:'#B45309', text:'#fafafa' },
-  'lazy-module':{ bg:'#FBBF24', border:'#FBBF24', text:'#fafafa' },
-  service:      { bg:'#0891B2', border:'#0E7490', text:'#fafafa' },
-  directive:    { bg:'#4F46E5', border:'#4338CA', text:'#fafafa' },
-  pipe:         { bg:'#DB2777', border:'#BE185D', text:'#fafafa' },
+  'lazy-module':{ bg:'#64748B', border:'#64748B', text:'#fafafa' },
+  service:      { bg:'#FFCA28', border:'#FFCA28', text:'#fafafa' },
+  directive:    { bg:'#AB47BC', border:'#AB47BC', text:'#fafafa' },
+  pipe:         { bg:'#00897B', border:'#00897B', text:'#fafafa' },
 };
-const TYPE_ICON  = { root:'⚡', component:'🧩', module:'📦', 'lazy-module':'⏱', service:'⚙', directive:'🔧', pipe:'🪄' };
-const EDGE_COLOR = { uses:'#94A3B8', route:'#3B82F6', 'child-route':'#60A5FA', 'lazy-load':'#FBBF24', navigate:'#EC4899' };
+const ROOT_ICON  = '⚡';
+const EDGE_COLOR = { uses:'#94A3B8', route:'#3B82F6', 'child-route':'#60A5FA', 'lazy-load':'#64748B', navigate:'#EC4899' };
 const EDGE_DASH  = { uses:'none', route:'6,3', 'child-route':'4,2', 'lazy-load':'8,4', navigate:'3,3' };
 const EDGE_WIDTH = { uses:1.5, route:2, 'child-route':1.5, 'lazy-load':2, navigate:1.5 };
 
@@ -641,6 +647,15 @@ function buildDefs() {
     marker.appendChild(poly);
     defs.appendChild(marker);
   });
+
+  // Angular logo symbol (reused for every non-root node)
+  const sym = document.createElementNS('http://www.w3.org/2000/svg','symbol');
+  sym.setAttribute('id','icon-angular');
+  sym.setAttribute('viewBox','0 0 24 24');
+  const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+  p.setAttribute('d','M9.87 2.5 3.022 5.666l.645 10.178zm4.26 0 6.202 13.344.645-10.178zM12 7.563l-2.451 5.964h4.906zm-3.73 8.959-.954 2.308L12 21.5l4.683-2.67-.953-2.308z');
+  sym.appendChild(p);
+  defs.appendChild(sym);
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -675,18 +690,18 @@ function toggleFilter(type, chip) {
 // ════════════════════════════════════════════════════════════════════════════
 function buildLegend() {
   const nodeTypes = [
-    { label:'Root',      color:'#7C3AED' },
-    { label:'Component', color:'#059669' },
-    { label:'Lazy',      color:'#FBBF24' },
-    { label:'Service',   color:'#0891B2' },
-    { label:'Directive', color:'#4F46E5' },
-    { label:'Pipe',      color:'#DB2777' },
+    { label:'Root',      color:'#FA5252' },
+    { label:'Component', color:'#1976d2' },
+    { label:'Lazy',      color:'#64748B' },
+    { label:'Service',   color:'#ffca28' },
+    { label:'Directive', color:'#ab47bc' },
+    { label:'Pipe',      color:'#00897b' },
   ];
   const edgeTypes = [
     { label:'Uses',        color:'#94A3B8', dash:false },
     { label:'Route',       color:'#3B82F6', dash:true },
     { label:'Child route', color:'#60A5FA', dash:true },
-    { label:'Lazy load',   color:'#FBBF24', dash:true },
+    { label:'Lazy load',   color:'#64748B', dash:true },
     { label:'Navigate',    color:'#EC4899', dash:true },
   ];
   let html = '<div style="font-size:.7rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Legend</div>';
@@ -762,7 +777,7 @@ function renderGraph() {
     const bg = svgEl('rect');
     bg.setAttribute('x', x1); bg.setAttribute('y', y1);
     bg.setAttribute('width', x2 - x1); bg.setAttribute('height', y2 - y1);
-    bg.setAttribute('rx', '14');
+    bg.setAttribute('rx', '4');
     bg.setAttribute('fill', fill);
     bg.setAttribute('stroke', stroke); bg.setAttribute('stroke-width', '1');
     bg.setAttribute('pointer-events', 'none');
@@ -777,11 +792,11 @@ function renderGraph() {
     zonesGrp.appendChild(lbl);
   }
 
-  drawZone(flowVis, 'NAVIGATION FLOW', 'rgba(59,130,246,0.07)',  'rgba(59,130,246,0.30)');
-  drawZone(compVis, 'COMPONENTS',      'rgba(5,150,105,0.07)',   'rgba(5,150,105,0.30)');
-  drawZone(svcVis,  'SERVICES',        'rgba(8,145,178,0.07)',   'rgba(8,145,178,0.30)');
-  drawZone(dirVis,  'DIRECTIVES',      'rgba(79,70,229,0.07)',   'rgba(79,70,229,0.30)');
-  drawZone(pipeVis, 'PIPES',           'rgba(219,39,119,0.07)',  'rgba(219,39,119,0.30)');
+  drawZone(flowVis, 'NAVIGATION FLOW', 'rgba(204, 204, 204, 0.05)',  'rgb(204 204 204)');
+  drawZone(compVis, 'COMPONENTS',      'rgba(25, 118, 210, 0.05)',   'rgb(25, 118, 210)');
+  drawZone(svcVis,  'SERVICES',        'rgba(255, 202, 40, 0.05)',   'rgb(255, 202, 40)');
+  drawZone(dirVis,  'DIRECTIVES',      'rgba(171, 71, 188, 0.05)',   'rgb(171, 71, 188)');
+  drawZone(pipeVis, 'PIPES',           'rgba(0, 137, 123, 0.05)',  'rgb(0, 137, 123)');
 
   // ── Focus set: selected node + its direct neighbours via any edge ────────────
   // Nodes/edges outside this set are dimmed when something is selected.
@@ -887,33 +902,37 @@ function renderGraph() {
     const rect = svgEl('rect');
     rect.setAttribute('width', NODE_W); rect.setAttribute('height', NODE_H);
     rect.setAttribute('rx', CORNER);
-    rect.setAttribute('fill', c.bg);
+    // rect.setAttribute('fill', c.bg);
+    rect.setAttribute('fill', '#19191a');
     rect.setAttribute('stroke', c.border);
     rect.setAttribute('stroke-width', isSelected ? '2' : '1');
     g.appendChild(rect);
 
     // Top color bar
-    const bar = svgEl('rect');
-    bar.setAttribute('width', NODE_W); bar.setAttribute('height', '4');
-    bar.setAttribute('rx', CORNER);
-    bar.setAttribute('fill', c.border);
-    bar.setAttribute('opacity', '0.6');
-    g.appendChild(bar);
+    // const bar = svgEl('rect');
+    // bar.setAttribute('width', NODE_W); bar.setAttribute('height', '4');
+    // bar.setAttribute('rx', CORNER);
+    // bar.setAttribute('fill', c.border);
+    // bar.setAttribute('opacity', '0.6');
+    // g.appendChild(bar);
 
     // Icon + label
-    const icon = svgEl('text');
-    icon.setAttribute('x', 12); icon.setAttribute('y', 30);
-    icon.setAttribute('font-size', '14');
-    icon.setAttribute('fill', c.text); icon.setAttribute('opacity', '0.8');
+    const icon = svgEl('use');
+    icon.setAttribute('href', '#icon-angular');
+    icon.setAttribute('x', 6);
+    icon.setAttribute('y', 12);
+    icon.setAttribute('width', '16');
+    icon.setAttribute('height', '16');
     icon.setAttribute('pointer-events', 'none');
-    icon.textContent = TYPE_ICON[node.type] || '🔷';
+    icon.setAttribute('fill', c.border);
     g.appendChild(icon);
 
     const label = svgEl('text');
-    label.setAttribute('x', 32); label.setAttribute('y', 30);
+    label.setAttribute('x', 32);
+    label.setAttribute('y', 24);
     label.setAttribute('font-size', '12');
     label.setAttribute('font-weight', '600');
-    label.setAttribute('fill', c.text);
+    label.setAttribute('fill', c.border);
     label.setAttribute('pointer-events', 'none');
     label.textContent = truncate(node.label, 18);
     g.appendChild(label);
@@ -921,9 +940,11 @@ function renderGraph() {
     // Sub-label (selector or route)
     if (node.selector || node.route) {
       const sub = svgEl('text');
-      sub.setAttribute('x', 32); sub.setAttribute('y', 48);
+      sub.setAttribute('x', 8);
+      sub.setAttribute('y', 40);
       sub.setAttribute('font-size', '10');
-      sub.setAttribute('fill', c.text); sub.setAttribute('opacity', '0.65');
+      sub.setAttribute('fill', c.text); 
+      // sub.setAttribute('opacity', '0.65');
       sub.setAttribute('pointer-events', 'none');
       sub.textContent = truncate(node.route || node.selector || '', 22);
       g.appendChild(sub);

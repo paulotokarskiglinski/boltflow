@@ -14,8 +14,8 @@
   --text: #E2E8F0;
   --text-muted: #94A3B8;
   --accent: #38BDF8;
-  --c-root: #7C3AED;
-  --c-root-b: #6D28D9;
+  --c-root: #FA5252;
+  --c-root-b: #FA5252;
   --c-comp: #059669;
   --c-comp-b: #047857;
   --c-module: #D97706;
@@ -249,7 +249,13 @@ header {
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: var(--bg)
+  background-color: var(--bg);
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 24px 24px
+}
+
+body.light .canvas-wrap {
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.1) 1px, transparent 1px)
 }
 
 #graph {
