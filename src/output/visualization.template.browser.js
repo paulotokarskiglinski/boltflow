@@ -14,6 +14,7 @@ const COLORS = {
   service:      { bg:'#FFCA28', border:'#FFCA28', text:'#fafafa' },
   directive:    { bg:'#AB47BC', border:'#AB47BC', text:'#fafafa' },
   pipe:         { bg:'#00897B', border:'#00897B', text:'#fafafa' },
+  guard:        { bg:'#43A047', border:'#43A047', text:'#fafafa' },
 };
 const ROOT_ICON  = '⚡';
 const EDGE_COLOR = { uses:'#94A3B8', route:'#3B82F6', 'child-route':'#60A5FA', 'lazy-load':'#64748B', navigate:'#EC4899' };
@@ -32,9 +33,10 @@ const state = {
   panning: false, panStart: null,
   hasPanned: false,
   dragging: null, dragOffset: null,
-  activeFilters: new Set(['root','component','module','lazy-module','service','directive','pipe']),
+  activeFilters: new Set(['root','component','module','lazy-module','service','directive','pipe','guard']),
   searchTerm: '',
   routing: 'ortho',
+  selectedGuard: null,
 };
 state.nodeMap = new Map(state.nodes.map(n => [n.id, n]));
 
@@ -97,6 +99,20 @@ function buildDefs() {
     defs.appendChild(marker);
   });
 
+  // Guard arrowhead
+  const guardMarker = document.createElementNS('http://www.w3.org/2000/svg','marker');
+  guardMarker.setAttribute('id','arrow-guard');
+  guardMarker.setAttribute('markerWidth','8');
+  guardMarker.setAttribute('markerHeight','6');
+  guardMarker.setAttribute('refX','7');
+  guardMarker.setAttribute('refY','3');
+  guardMarker.setAttribute('orient','auto');
+  const guardPoly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+  guardPoly.setAttribute('points','0 0, 8 3, 0 6');
+  guardPoly.setAttribute('fill', '#43A047');
+  guardMarker.appendChild(guardPoly);
+  defs.appendChild(guardMarker);
+
   // Angular logo symbol (reused for every non-root node)
   const sym = document.createElementNS('http://www.w3.org/2000/svg','symbol');
   sym.setAttribute('id','icon-angular');
@@ -110,7 +126,7 @@ function buildDefs() {
 // ════════════════════════════════════════════════════════════════════════════
 // FILTERS
 // ════════════════════════════════════════════════════════════════════════════
-const TYPE_LABELS = { root:'Root', component:'Component', module:'Module', 'lazy-module':'Lazy', service:'Service', directive:'Directive', pipe:'Pipe' };
+const TYPE_LABELS = { root:'Root', component:'Component', module:'Module', 'lazy-module':'Lazy', service:'Service', directive:'Directive', pipe:'Pipe', guard:'Guard' };
 function buildFilters() {
   const types = [...new Set(GRAPH.nodes.map(n => n.type))];
   types.forEach(type => {
@@ -145,6 +161,7 @@ function buildLegend() {
     { label:'Service',   color:'#ffca28' },
     { label:'Directive', color:'#ab47bc' },
     { label:'Pipe',      color:'#00897b' },
+    { label:'Guard',     color:'#43A047' },
   ];
   const edgeTypes = [
     { label:'Uses',        color:'#94A3B8', dash:false },
@@ -250,6 +267,9 @@ function renderGraph() {
   drawZone(dirVis,  'DIRECTIVES',      'rgba(171, 71, 188, 0.05)',   'rgb(171, 71, 188)');
   drawZone(pipeVis, 'PIPES',           'rgba(0, 137, 123, 0.05)',  'rgb(0, 137, 123)');
 
+  const guardVis = state.nodes.filter(n => vis.has(n.id) && n.type === 'guard');
+  drawZone(guardVis, 'GUARDS',         'rgba(67, 160, 71, 0.05)',   'rgb(67, 160, 71)');
+
   // ── Focus set: selected node + its direct neighbours via any edge ────────────
   // Nodes/edges outside this set are dimmed when something is selected.
   const focusedNodes = new Set();
@@ -264,6 +284,34 @@ function renderGraph() {
       }
     });
   }
+  if (state.selectedGuard) {
+    const guardEdge = state.edges.find(e => e.id === state.selectedGuard);
+    if (guardEdge) {
+      focusedNodes.add(guardEdge.source);
+      focusedNodes.add(guardEdge.target);
+      focusedEdges.add(guardEdge.id);
+      // Also highlight guard nodes whose name matches one of the edge's guards
+      if (guardEdge.guards) {
+        const guardNames = new Set(guardEdge.guards);
+        state.nodes.forEach(n => {
+          if (n.type === 'guard' && guardNames.has(n.label)) focusedNodes.add(n.id);
+        });
+      }
+    }
+  }
+  // When a guard node is selected, highlight all route edges that reference it
+  if (state.selected) {
+    const selNode = state.nodeMap.get(state.selected);
+    if (selNode && selNode.type === 'guard') {
+      state.edges.forEach(edge => {
+        if (edge.guards && edge.guards.includes(selNode.label)) {
+          focusedEdges.add(edge.id);
+          focusedNodes.add(edge.source);
+          focusedNodes.add(edge.target);
+        }
+      });
+    }
+  }
   const hasFocus = focusedNodes.size > 0;
   const DIM = '0.12'; // opacity for non-focused elements
 
@@ -277,6 +325,34 @@ function renderGraph() {
   });
   const PARALLEL_STEP = 28; // px of extra perpendicular offset per parallel edge
 
+  // ── Guard virtual nodes ────────────────────────────────────────────────────
+  // Pre-computed before the edge loop so edges can be redirected to guard cards.
+  const GUARD_COLOR = '#43A047';
+  const GUARD_CARD_GAP = 30; // px gap between guard card edge and component node edge
+  const guardCardMap = new Map(); // edgeId → { x, y, h, w, guards[], tgt, isRightward, tgtDisplayX }
+  const nodeDisplayMap = new Map(); // nodeId → overridden display x (pushed out by a guard card)
+  state.edges.forEach(edge => {
+    if (!edge.guards?.length) return;
+    if (!['route', 'child-route', 'lazy-load'].includes(edge.type)) return;
+    const src = state.nodeMap.get(edge.source);
+    const tgt = state.nodeMap.get(edge.target);
+    if (!src || !tgt || !vis.has(edge.source) || !vis.has(edge.target)) return;
+    const isRightward = tgt.x >= src.x;
+    const cardH = Math.max(28, 14 + edge.guards.length * 14);
+    const maxNameLen = Math.max(...edge.guards.map(g => Math.min(g.length, 24)));
+    const guardCardW = Math.max(70, Math.ceil(26 + maxNameLen * 5.5));
+    // Guard card's near edge aligns with the component's near edge
+    const gcx = isRightward
+      ? tgt.x - NODE_W / 2 + guardCardW / 2
+      : tgt.x + NODE_W / 2 - guardCardW / 2;
+    // Component is pushed outward to make room for the guard card + gap
+    const tgtDisplayX = isRightward
+      ? tgt.x + guardCardW + GUARD_CARD_GAP
+      : tgt.x - guardCardW - GUARD_CARD_GAP;
+    nodeDisplayMap.set(tgt.id, tgtDisplayX);
+    guardCardMap.set(edge.id, { x: gcx, y: tgt.y, h: cardH, w: guardCardW, guards: edge.guards, tgt, isRightward, tgtDisplayX });
+  });
+
   // Edges
   state.edges.forEach(edge => {
     if (!vis.has(edge.source) || !vis.has(edge.target)) return;
@@ -284,9 +360,12 @@ function renderGraph() {
     const tgt = state.nodeMap.get(edge.target);
     if (!src || !tgt) return;
 
+    // If this edge has a guard card, route the arrow to the guard card instead of the component
+    const gc = guardCardMap.get(edge.id);
+    const effectiveTgt = gc ? { x: gc.x, y: gc.y } : tgt;
     const { sx, sy, tx, ty } = state.routing === 'ortho'
-      ? calcEdgePointsOrtho(src, tgt)
-      : calcEdgePoints(src, tgt);
+      ? calcEdgePointsOrtho(src, effectiveTgt, gc ? gc.w / 2 : undefined)
+      : calcEdgePoints(src, effectiveTgt);
     const group   = parallelMap.get(edge.source + '\x00' + edge.target) || [edge];
     const idx     = group.indexOf(edge);
     const pOffset = (idx - (group.length - 1) / 2) * PARALLEL_STEP;
@@ -311,7 +390,7 @@ function renderGraph() {
     edgesGrp.appendChild(path);
 
     // Edge label — placed at the arc midpoint so it follows the curve
-    if (edge.label) {
+    if (edge.label && !guardCardMap.get(edge.id)) {
       const lbl = svgEl('text');
       lbl.setAttribute('x', midX); lbl.setAttribute('y', midY - 5);
       lbl.setAttribute('text-anchor', 'middle');
@@ -322,13 +401,97 @@ function renderGraph() {
       lbl.textContent = edge.label;
       edgesGrp.appendChild(lbl);
     }
+
+  });
+
+  // ── Guard → component connecting edges ────────────────────────────────────
+  guardCardMap.forEach((gc, edgeId) => {
+    const gOpacity = hasFocus ? (focusedEdges.has(edgeId) ? '0.85' : DIM) : '0.75';
+    const gsx = gc.isRightward ? gc.x + gc.w / 2 : gc.x - gc.w / 2;
+    const gtx = gc.isRightward ? gc.tgtDisplayX - NODE_W / 2 : gc.tgtDisplayX + NODE_W / 2;
+    const gsy = gc.y, gty = gc.tgt.y;
+    const gp = svgEl('path');
+    gp.setAttribute('d', 'M'+gsx+','+gsy+' L'+gtx+','+gty);
+    gp.setAttribute('fill', 'none');
+    gp.setAttribute('stroke', GUARD_COLOR);
+    gp.setAttribute('stroke-width', '1.5');
+    gp.setAttribute('marker-end', 'url(#arrow-guard)');
+    gp.setAttribute('opacity', gOpacity);
+    gp.setAttribute('pointer-events', 'none');
+    edgesGrp.appendChild(gp);
+  });
+
+  // ── Guard card nodes ───────────────────────────────────────────────────────
+  guardCardMap.forEach((gc, edgeId) => {
+    const gOpacity = hasFocus ? (focusedEdges.has(edgeId) ? '1' : DIM) : '1';
+    const gLeft = gc.x - gc.w / 2;
+    const gTop  = gc.y - gc.h / 2;
+    const isGuardSelected = state.selectedGuard === edgeId;
+
+    const g = svgEl('g');
+    g.setAttribute('transform', 'translate('+gLeft+','+gTop+')');
+    g.setAttribute('opacity', gOpacity);
+    g.setAttribute('cursor', 'pointer');
+    g.addEventListener('click', e => {
+      e.stopPropagation();
+      selectGuard(edgeId);
+    });
+
+    if (isGuardSelected) {
+      const ring = svgEl('rect');
+      ring.setAttribute('x', -2); ring.setAttribute('y', -2);
+      ring.setAttribute('width', gc.w + 4); ring.setAttribute('height', gc.h + 4);
+      ring.setAttribute('rx', CORNER + 1); ring.setAttribute('fill', 'none');
+      ring.setAttribute('stroke', '#38BDF8'); ring.setAttribute('stroke-width', '1.5');
+      ring.setAttribute('pointer-events', 'none');
+      g.appendChild(ring);
+    }
+
+    const rect = svgEl('rect');
+    rect.setAttribute('width', gc.w);
+    rect.setAttribute('height', gc.h);
+    rect.setAttribute('rx', CORNER);
+    rect.setAttribute('fill', '#19191a');
+    rect.setAttribute('stroke', GUARD_COLOR);
+    rect.setAttribute('stroke-width', '1');
+    g.appendChild(rect);
+
+    // Vertically center the icon and text block on gc.h / 2
+    const cardMidY = gc.h / 2;
+    const icon = svgEl('use');
+    icon.setAttribute('href', '#icon-angular');
+    icon.setAttribute('x', 4);
+    icon.setAttribute('y', cardMidY - 6); // top of 12px icon centred on cardMidY
+    icon.setAttribute('width', '12'); icon.setAttribute('height', '12');
+    icon.setAttribute('fill', GUARD_COLOR);
+    icon.setAttribute('pointer-events', 'none');
+    g.appendChild(icon);
+
+    // Text block centred as a whole; each row uses dominant-baseline:central so
+    // the glyph mid-line aligns with the row centre rather than the baseline.
+    const textBlockTopY = cardMidY - (gc.guards.length * 14) / 2;
+    gc.guards.forEach((guard, gi) => {
+      const txt = svgEl('text');
+      txt.setAttribute('x', 20);
+      txt.setAttribute('y', textBlockTopY + 6 + gi * 12); // 7 = half row height
+      txt.setAttribute('dominant-baseline', 'central');
+      txt.setAttribute('font-size', '9');
+      txt.setAttribute('font-weight', '600');
+      txt.setAttribute('fill', GUARD_COLOR);
+      txt.setAttribute('pointer-events', 'none');
+      txt.textContent = truncate(guard, 24);
+      g.appendChild(txt);
+    });
+
+    nodesGrp.appendChild(g);
   });
 
   // Nodes
   state.nodes.forEach(node => {
     if (!vis.has(node.id)) return;
     const c = COLORS[node.type] || COLORS.component;
-    const x = node.x - NODE_W / 2, y = node.y - NODE_H / 2;
+    const displayX = nodeDisplayMap.get(node.id) ?? node.x;
+    const x = displayX - NODE_W / 2, y = node.y - NODE_H / 2;
     const isSelected = state.selected === node.id;
     const nodeOpacity = hasFocus ? (focusedNodes.has(node.id) ? '1' : DIM) : '1';
 
@@ -398,7 +561,9 @@ function renderGraph() {
       sub.setAttribute('fill', c.text);
       // sub.setAttribute('opacity', '0.65');
       sub.setAttribute('pointer-events', 'none');
-      const subText = node.route ? 'route: ' + node.route
+      const subText = node.type === 'guard' && node.selector
+        ? truncate(node.selector, 26)
+        : node.route ? 'route: ' + node.route
         : node.selector === 'app-root' ? 'app-root'
         : 'selector: ' + node.selector;
       sub.textContent = truncate(subText, 26);
@@ -406,8 +571,23 @@ function renderGraph() {
     }
 
     // Unused warning — shown when no other node has an edge pointing to this node
+    // Guard nodes use a different check: whether any route edge references them by name.
     let extraLabelCount = 0;
-    if (node.type !== 'root' && node.selector !== 'app-root' && !targetedIds.has(node.id)) {
+    if (node.type === 'guard') {
+      const isUsedGuard = state.edges.some(e => e.guards && e.guards.includes(node.label));
+      if (!isUsedGuard) {
+        const warnY = node.selector ? 56 : 42;
+        const warn = svgEl('text');
+        warn.setAttribute('x', 8);
+        warn.setAttribute('y', warnY);
+        warn.setAttribute('font-size', '12');
+        warn.setAttribute('fill', '#F97316');
+        warn.setAttribute('pointer-events', 'none');
+        warn.textContent = '⚠ Unused Guard';
+        g.appendChild(warn);
+        extraLabelCount++;
+      }
+    } else if (node.type !== 'root' && node.selector !== 'app-root' && !targetedIds.has(node.id)) {
       const warnY = (node.route || node.selector) ? 56 : 42;
       const warn = svgEl('text');
       warn.setAttribute('x', 8);
@@ -443,6 +623,7 @@ function renderGraph() {
 // ════════════════════════════════════════════════════════════════════════════
 function selectNode(id) {
   state.selected = id;
+  state.selectedGuard = null;
   renderGraph();
   renderSidebar();
 
@@ -460,7 +641,15 @@ function selectNode(id) {
   html += '<div class="dp-section-title">Identity</div>';
   html += row('Type', typeBadge);
   if (node.type === 'pipe' && node.selector) html += row('Pipe name', code(node.selector));
-  else if (node.selector) html += row('Selector', code(node.selector));
+  else if (node.type === 'guard' && node.selector) {
+    // selector field stores the implemented interfaces for guard nodes
+    const ifaces = node.selector.split(', ');
+    html += '<div class="dp-section"><div class="dp-section-title">Implements (' + ifaces.length + ')</div>';
+    ifaces.forEach(i => {
+      html += '<span class="dp-chip" style="border-color:#43A047;color:#43A047">' + escHtml(i) + '</span>';
+    });
+    html += '</div>';
+  } else if (node.selector) html += row('Selector', code(node.selector));
   if (node.route)    html += row('Route', code(node.route));
   if (node.isStandalone !== undefined) html += row('Standalone', node.isStandalone ? 'Yes' : 'No');
   html += '</div>';
@@ -482,9 +671,45 @@ function selectNode(id) {
     html += '</div>';
   }
 
+  // Guard node: show which routes reference it
+  if (node.type === 'guard') {
+    const routeEdgesWithGuard = state.edges.filter(e => e.guards && e.guards.includes(node.label));
+    if (routeEdgesWithGuard.length) {
+      html += '<div class="dp-section"><div class="dp-section-title">Used by routes (' + routeEdgesWithGuard.length + ')</div>';
+      routeEdgesWithGuard.forEach(e => {
+        const srcNode = state.nodeMap.get(e.source);
+        const tgtNode = state.nodeMap.get(e.target);
+        const routeLabel = e.label || '(unnamed)';
+        if (srcNode && tgtNode) {
+          html += '<div class="dp-row"><span class="dp-label">' + escHtml(routeLabel) + '</span><span class="dp-value">'
+            + '<span class="dp-chip" onclick="selectNode(\'' + srcNode.id + '\')">' + escHtml(srcNode.label) + '</span>'
+            + ' → '
+            + '<span class="dp-chip" onclick="selectNode(\'' + tgtNode.id + '\')">' + escHtml(tgtNode.label) + '</span>'
+            + '</span></div>';
+        }
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="dp-section"><div class="dp-section-title" style="color:#F97316">⚠ Unused Guard</div>'
+        + '<div style="font-size:.8rem;color:var(--text-muted)">This guard is not referenced by any detected route.</div>'
+        + '</div>';
+    }
+  }
+
   // Connections
   const usedBy = state.edges.filter(e => e.target === id && e.type === 'uses').map(e => state.nodeMap.get(e.source)).filter(Boolean);
   const uses   = state.edges.filter(e => e.source === id && e.type === 'uses').map(e => state.nodeMap.get(e.target)).filter(Boolean);
+
+  // Guards on any incoming route edge
+  const guardEdges = state.edges.filter(e => e.target === id && e.guards && e.guards.length);
+  if (guardEdges.length) {
+    const allGuards = [...new Set(guardEdges.flatMap(e => e.guards))];
+    html += '<div class="dp-section"><div class="dp-section-title">Guards ('+allGuards.length+')</div>';
+    allGuards.forEach(g => {
+      html += '<span class="dp-chip" style="border-color:#43A047;color:#43A047">'+escHtml(g)+'</span>';
+    });
+    html += '</div>';
+  }
 
   if (uses.length) {
     html += '<div class="dp-section"><div class="dp-section-title">Uses ('+uses.length+')</div>';
@@ -504,6 +729,7 @@ function selectNode(id) {
 
 function closeDetail() {
   state.selected = null;
+  state.selectedGuard = null;
   detailPanel.classList.add('hidden');
   renderGraph();
   renderSidebar();
@@ -516,6 +742,62 @@ function code(val) { return '<code style="font-size:.78rem;background:var(--surf
 
 // Expose selectNode globally so dp-chip onclick can use it
 window.selectNode = selectNode;
+window.selectGuard = selectGuard;
+
+// ════════════════════════════════════════════════════════════════════════════
+// GUARD SELECTION & DETAIL PANEL
+// ════════════════════════════════════════════════════════════════════════════
+function selectGuard(edgeId) {
+  if (state.selectedGuard === edgeId) {
+    state.selectedGuard = null;
+    closeDetail();
+    return;
+  }
+  state.selectedGuard = edgeId;
+  state.selected = null;
+  renderGraph();
+  renderSidebar();
+
+  const edge = state.edges.find(e => e.id === edgeId);
+  if (!edge) { closeDetail(); return; }
+
+  const srcNode = state.nodeMap.get(edge.source);
+  const tgtNode = state.nodeMap.get(edge.target);
+  const EDGE_TYPE_LABEL = { route: 'Route', 'child-route': 'Child route', 'lazy-load': 'Lazy load' };
+
+  detailPanel.classList.remove('hidden');
+  dpTitle.textContent = edge.guards.length === 1 ? edge.guards[0] : 'Guards (' + edge.guards.length + ')';
+
+  let html = '';
+
+  html += '<div class="dp-section">';
+  html += '<div class="dp-section-title">Guards (' + edge.guards.length + ')</div>';
+  edge.guards.forEach(g => {
+    html += '<span class="dp-chip" style="border-color:#43A047;color:#43A047">' + escHtml(g) + '</span>';
+  });
+  html += '</div>';
+
+  html += '<div class="dp-section">';
+  html += '<div class="dp-section-title">Details</div>';
+  html += row('Type', '<span style="color:#60A5FA">' + escHtml(EDGE_TYPE_LABEL[edge.type] || edge.type) + '</span>');
+  if (edge.label) html += row('Route', code(edge.label));
+  html += '</div>';
+
+  if (srcNode) {
+    html += '<div class="dp-section"><div class="dp-section-title">From</div>';
+    const sc = COLORS[srcNode.type] || COLORS.component;
+    html += '<span class="dp-chip" onclick="selectNode(\'' + srcNode.id + '\')">' + escHtml(srcNode.label) + '</span>';
+    html += '</div>';
+  }
+  if (tgtNode) {
+    html += '<div class="dp-section"><div class="dp-section-title">To</div>';
+    const tc = COLORS[tgtNode.type] || COLORS.component;
+    html += '<span class="dp-chip" onclick="selectNode(\'' + tgtNode.id + '\')">' + escHtml(tgtNode.label) + '</span>';
+    html += '</div>';
+  }
+
+  dpBody.innerHTML = html;
+}
 
 // ════════════════════════════════════════════════════════════════════════════
 // GEOMETRY
@@ -551,12 +833,13 @@ function curvePath(sx, sy, tx, ty, pOffset) {
   return { d: 'M'+sx+','+sy+' Q'+cpx+','+cpy+' '+tx+','+ty, midX, midY };
 }
 
-function calcEdgePointsOrtho(src, tgt) {
+function calcEdgePointsOrtho(src, tgt, tgtHalfW) {
   // Exit the right side of source when target is to the right, otherwise left.
+  const thw = tgtHalfW !== undefined ? tgtHalfW : NODE_W / 2;
   if (tgt.x >= src.x) {
-    return { sx: src.x + NODE_W/2, sy: src.y, tx: tgt.x - NODE_W/2, ty: tgt.y };
+    return { sx: src.x + NODE_W/2, sy: src.y, tx: tgt.x - thw, ty: tgt.y };
   } else {
-    return { sx: src.x - NODE_W/2, sy: src.y, tx: tgt.x + NODE_W/2, ty: tgt.y };
+    return { sx: src.x - NODE_W/2, sy: src.y, tx: tgt.x + thw, ty: tgt.y };
   }
 }
 

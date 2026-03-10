@@ -53,6 +53,8 @@ export interface RouteInfo {
   sourceFilePath?: string;
   redirectTo?: string;
   title?: string;
+  /** Guard class/function names protecting this route (canActivate, canDeactivate, canMatch, etc.) */
+  guards?: string[];
 }
 
 export interface ModuleInfo {
@@ -88,6 +90,14 @@ export interface PipeInfo {
   filePath: string;
 }
 
+export interface GuardInfo {
+  id: string;
+  name: string;
+  filePath: string;
+  /** Guard interfaces this class implements, e.g. ['CanActivate', 'CanDeactivate<T>'] */
+  interfaces: string[];
+}
+
 export interface AnalysisResult {
   framework: Framework;
   projectRoot: string;
@@ -97,11 +107,12 @@ export interface AnalysisResult {
   services: ServiceInfo[];
   directives: DirectiveInfo[];
   pipes: PipeInfo[];
+  guards: GuardInfo[];
 }
 
 // ─── Graph model ─────────────────────────────────────────────────────────────
 
-export type NodeType = 'root' | 'component' | 'module' | 'lazy-module' | 'service' | 'directive' | 'pipe';
+export type NodeType = 'root' | 'component' | 'module' | 'lazy-module' | 'service' | 'directive' | 'pipe' | 'guard';
 
 
 export interface GraphNode {
@@ -131,6 +142,8 @@ export interface GraphEdge {
   target: string;
   type: EdgeType;
   label?: string;
+  /** Guard names on the route edge (populated from RouteInfo.guards) */
+  guards?: string[];
 }
 
 export interface FlowGraph {

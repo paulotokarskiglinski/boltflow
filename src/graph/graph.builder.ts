@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { AnalysisResult, ComponentInfo, DirectiveInfo, FlowGraph, GraphEdge, GraphNode, NodeType, PipeInfo, RouteInfo, ServiceInfo } from '../types';
+import { AnalysisResult, ComponentInfo, DirectiveInfo, FlowGraph, GraphEdge, GraphNode, GuardInfo, NodeType, PipeInfo, RouteInfo, ServiceInfo } from '../types';
 
 
 const NODE_W = 180;
@@ -70,6 +70,29 @@ export function buildGraph(result: AnalysisResult, projectName: string): FlowGra
       type: 'pipe',
       filePath: pipe.filePath,
       selector: pipe.pipeName, // reuse selector field to store the pipe name
+      x: 0,
+      y: 0,
+    });
+  }
+
+  // 4b. Create nodes for guards
+  // Collect all guard names referenced in any route so we can mark unused ones.
+  const usedGuardNames = new Set<string>();
+  function collectGuardNames(routes: RouteInfo[]): void {
+    for (const r of routes) {
+      if (r.guards) r.guards.forEach(g => usedGuardNames.add(g));
+      if (r.children) collectGuardNames(r.children);
+    }
+  }
+  collectGuardNames(result.routes);
+
+  for (const guard of (result.guards ?? [])) {
+    nodeMap.set(guard.id, {
+      id: guard.id,
+      label: guard.name,
+      type: 'guard',
+      filePath: guard.filePath,
+      selector: guard.interfaces.join(', '),
       x: 0,
       y: 0,
     });
@@ -190,6 +213,7 @@ function buildRouteEdges(
           target: targetId,
           type: 'child-route',
           label: route.path ? `/${route.path}` : '',
+          guards: route.guards?.length ? route.guards : undefined,
         });
       } else {
         // Top-level route: try to connect from AppComponent if it exists
@@ -201,6 +225,7 @@ function buildRouteEdges(
             target: targetId,
             type: 'route',
             label: route.path ? `/${route.path}` : '/',
+            guards: route.guards?.length ? route.guards : undefined,
           });
         }
       }
@@ -235,6 +260,7 @@ function buildRouteEdges(
           target: lazyId,
           type: 'lazy-load',
           label: `/${route.path}`,
+          guards: route.guards?.length ? route.guards : undefined,
         });
       }
     } else if (route.children && targetId) {
@@ -579,7 +605,7 @@ function computeLayout(nodes: GraphNode[], edges: GraphEdge[]): void {
 
   // ── Shared nodes: 4 separate vertical columns, one per type ─────────────
   if (sharedNodes.length > 0) {
-    const sharedGroupOrder: NodeType[] = ['component', 'service', 'directive', 'pipe'];
+    const sharedGroupOrder: NodeType[] = ['component', 'service', 'directive', 'pipe', 'guard'];
 
     // Y: below the bottom of the flow zone
     const maxFlowY = flowNodes.length

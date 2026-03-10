@@ -132,6 +132,24 @@ function extractRouteFromObject(obj: ObjectLiteralExpression, sourceFilePath: st
 
   route.sourceFilePath = sourceFilePath;
 
+  // Guards: canActivate, canActivateChild, canDeactivate, canMatch, canLoad
+  const guardKeys = ['canActivate', 'canActivateChild', 'canDeactivate', 'canMatch', 'canLoad'];
+  const allGuards: string[] = [];
+  for (const guardKey of guardKeys) {
+    const guardPropNode = obj.getProperty(guardKey);
+    if (!guardPropNode || !Node.isPropertyAssignment(guardPropNode)) continue;
+    const guardInit = (guardPropNode as PropertyAssignment).getInitializer();
+    if (!guardInit || !Node.isArrayLiteralExpression(guardInit)) continue;
+    for (const el of (guardInit as ArrayLiteralExpression).getElements()) {
+      const name = el.getText().trim();
+      // Accept only simple identifiers (class names or function references)
+      if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name) && !allGuards.includes(name)) {
+        allGuards.push(name);
+      }
+    }
+  }
+  if (allGuards.length) route.guards = allGuards;
+
   // children
   const childrenProp = obj.getProperty('children');
   if (childrenProp && Node.isPropertyAssignment(childrenProp)) {
