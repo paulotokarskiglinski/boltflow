@@ -9,3 +9,4 @@ npm-debug.log*
 Thumbs.db
 coverage/
 .nyc_output/
+demo-app/

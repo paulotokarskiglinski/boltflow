@@ -14,7 +14,7 @@
     "start": "node dist/cli.js",
     "test": "jest --passWithNoTests",
     "prepublishOnly": "npm run build",
-    "demo": "npm run build && node dist/cli.js analyze \"C:\\Users\\User\\Projetos\\demo-app-21-v2\" --open"
+    "demo": "npm run build && node dist/cli.js analyze demo-app --open"
   },
   "keywords": [
     "angular",
