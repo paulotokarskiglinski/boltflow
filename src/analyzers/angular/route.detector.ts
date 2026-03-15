@@ -123,11 +123,18 @@ function extractRouteFromObject(obj: ObjectLiteralExpression, sourceFilePath: st
 
   const loadComponentProp = obj.getProperty('loadComponent');
   if (loadComponentProp && Node.isPropertyAssignment(loadComponentProp)) {
-    // Treat loadComponent similar to loadChildren for graph purposes
-    route.loadChildren = (loadComponentProp as PropertyAssignment)
-      .getInitializer()
-      ?.getText()
-      .trim();
+    const loadCompText = (loadComponentProp as PropertyAssignment)
+      .getInitializer()?.getText().trim() ?? '';
+    // () => DirectComponent — static reference, treat as a regular component
+    const directRef = loadCompText.match(/^\(\)\s*=>\s*([A-Za-z_$][A-Za-z0-9_$]*)$/);
+    if (directRef) {
+      route.componentName = directRef[1];
+    } else {
+      // () => import('...').then(m => m.ComponentName) — lazily loaded single component
+      const thenRef = loadCompText.match(/\.then\(\w+\s*=>\s*\w+\.([A-Za-z_$][A-Za-z0-9_$]*)\)/);
+      if (thenRef) route.componentName = thenRef[1];
+      route.loadChildren = loadCompText;
+    }
   }
 
   route.sourceFilePath = sourceFilePath;

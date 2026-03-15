@@ -98,11 +98,13 @@ export function buildGraph(result: AnalysisResult, projectName: string): FlowGra
     });
   }
 
-  // 5. Attach route paths to nodes
-  attachRoutePaths(result.routes, nodeMap, result.components);
+  // 5. Inject routes from lazy-loaded files into their parent lazy route entries,
+  //    then attach route paths (full /parent/child paths) to component nodes.
+  const processedRoutes = injectLazyChildRoutes(result.routes);
+  attachRoutePaths(processedRoutes, nodeMap, result.components);
 
   // 6. Build edges from route tree
-  buildRouteEdges(result.routes, null, nodeMap, edges, result.components, result.projectRoot);
+  buildRouteEdges(processedRoutes, null, nodeMap, edges, result.components, result.projectRoot);
 
   // 7. Build "uses" edges from template analysis (component → child component)
   buildUsesEdges(result.components, nodeMap, edges);
@@ -206,12 +208,17 @@ function buildRouteEdges(
     const targetId = resolveRouteComponentId(route, components);
 
     if (targetId && nodeMap.has(targetId)) {
+      // Use lazy-load edge type when the route is lazily loaded (loadComponent with import())
+      const edgeType = route.loadChildren
+        ? 'lazy-load'
+        : parentComponentId ? 'child-route' : 'route';
+
       if (parentComponentId) {
         edges.push({
           id: edgeId(),
           source: parentComponentId,
           target: targetId,
-          type: 'child-route',
+          type: edgeType,
           label: route.path ? `/${route.path}` : '',
           guards: route.guards?.length ? route.guards : undefined,
         });
@@ -223,7 +230,7 @@ function buildRouteEdges(
             id: edgeId(),
             source: appNode.id,
             target: targetId,
-            type: 'route',
+            type: edgeType,
             label: route.path ? `/${route.path}` : '/',
             guards: route.guards?.length ? route.guards : undefined,
           });
@@ -234,9 +241,7 @@ function buildRouteEdges(
         buildRouteEdges(route.children, targetId, nodeMap, edges, components, projectRoot);
       }
     } else if (route.loadChildren) {
-      // Lazy-loaded module/component — represent as a virtual node.
-      // Works for both top-level routes (parentComponentId is null → use AppComponent)
-      // and nested routes (parentComponentId is set).
+      // Lazy-loaded module — represent as a virtual lazy-module node.
       const sourceId = parentComponentId ?? findAppComponentNode(nodeMap)?.id ?? null;
       if (sourceId) {
         const lazyId = `lazy_${route.path}`;
@@ -262,11 +267,80 @@ function buildRouteEdges(
           label: `/${route.path}`,
           guards: route.guards?.length ? route.guards : undefined,
         });
+        // Recurse into injected children (routes from the lazy file)
+        if (route.children?.length) {
+          buildRouteEdges(route.children, lazyId, nodeMap, edges, components, projectRoot);
+        }
       }
     } else if (route.children && targetId) {
       buildRouteEdges(route.children, targetId, nodeMap, edges, components, projectRoot);
     }
   }
+}
+
+/**
+ * Resolves the absolute file path of a lazy-loaded module from the raw
+ * loadChildren expression. Returns '' if the path cannot be determined.
+ */
+function resolveLoadChildrenAbsPath(loadChildren: string, sourceFilePath: string): string {
+  const m = loadChildren.match(/import\(['"`]([^'"`]+)['"`]\)/);
+  if (!m) return '';
+  const importSpecifier = m[1];
+  if (!importSpecifier.startsWith('.')) return '';
+  const sourceDir = path.dirname(sourceFilePath);
+  let resolved = path.resolve(sourceDir, importSpecifier);
+  // path.extname returns '.routes' for 'admin.routes' — always ensure the .ts extension
+  if (!resolved.endsWith('.ts') && !resolved.endsWith('.tsx')) resolved += '.ts';
+  return resolved;
+}
+
+/**
+ * For every lazy-loaded route whose loadChildren expression points to a
+ * separate routes file, inject the routes from that file as children of the
+ * lazy route, then remove those routes from the top-level list so they are
+ * not also connected directly from AppComponent.
+ */
+function injectLazyChildRoutes(routes: RouteInfo[]): RouteInfo[] {
+  // Build a map: normalised absolute file path → routes originating from that file
+  const routesByFile = new Map<string, RouteInfo[]>();
+  for (const route of routes) {
+    if (!route.sourceFilePath) continue;
+    const key = path.normalize(route.sourceFilePath).toLowerCase();
+    if (!routesByFile.has(key)) routesByFile.set(key, []);
+    routesByFile.get(key)!.push(route);
+  }
+
+  // Track which files we consumed so we can filter them from the top level
+  const lazyFileKeys = new Set<string>();
+
+  function processRoute(route: RouteInfo): RouteInfo {
+    // Discover children from the lazily loaded file (loadChildren only, not loadComponent)
+    let extraChildren: RouteInfo[] = [];
+    if (route.loadChildren && route.sourceFilePath && !route.componentName) {
+      const absPath = resolveLoadChildrenAbsPath(route.loadChildren, route.sourceFilePath);
+      if (absPath) {
+        const key = path.normalize(absPath).toLowerCase();
+        const lazyRoutes = routesByFile.get(key);
+        if (lazyRoutes?.length) {
+          lazyFileKeys.add(key);
+          extraChildren = lazyRoutes.map(r => processRoute(r));
+        }
+      }
+    }
+    // Recursively process existing children
+    const processedChildren = route.children ? route.children.map(processRoute) : [];
+    const allChildren = [...processedChildren, ...extraChildren];
+    return allChildren.length > 0 ? { ...route, children: allChildren } : route;
+  }
+
+  const injected = routes.map(r => processRoute(r));
+
+  // Remove top-level routes that were injected as lazy children
+  return injected.filter(r => {
+    if (!r.sourceFilePath) return true;
+    const key = path.normalize(r.sourceFilePath).toLowerCase();
+    return !lazyFileKeys.has(key);
+  });
 }
 
 /**
@@ -286,7 +360,7 @@ function resolveLoadChildrenPath(
   if (!importSpecifier.startsWith('.')) return importSpecifier; // bare module, can't resolve
   const sourceDir = path.dirname(sourceFilePath);
   let resolved = path.resolve(sourceDir, importSpecifier);
-  if (!path.extname(resolved)) resolved += '.ts';
+  if (!resolved.endsWith('.ts') && !resolved.endsWith('.tsx')) resolved += '.ts';
   return path.relative(projectRoot, resolved).replace(/\\/g, '/');
 }
 
@@ -549,57 +623,88 @@ function computeLayout(nodes: GraphNode[], edges: GraphEdge[]): void {
   const flowNodes   = nodes.filter(n => n.lane === 'flow');
   const sharedNodes = nodes.filter(n => n.lane === 'shared');
 
-  // ── BFS depth assignment for flow nodes ─────────────────────────────────
-  const levels = new Map<string, number>();
+  // ── Subtree-aware layout for flow nodes ─────────────────────────────────
+  // Children are grouped vertically near their parent by allocating each
+  // subtree a vertical slot proportional to its number of leaf nodes.
   if (flowNodes.length > 0) {
-    // Build adjacency restricted to flow→flow edges
     const flowIds = new Set(flowNodes.map(n => n.id));
-    const adj = new Map<string, string[]>();
-    flowNodes.forEach(n => adj.set(n.id, []));
+    const nodeById = new Map(nodes.map(n => [n.id, n]));
+
+    // Build routing tree adjacency — routing edges only (no navigate, no uses)
+    // so that navigate short-circuits don't distort the tree structure.
+    const treeAdj = new Map<string, string[]>();
+    flowNodes.forEach(n => treeAdj.set(n.id, []));
     edges.forEach(e => {
-      if (flowIds.has(e.source) && flowIds.has(e.target)) {
-        adj.get(e.source)!.push(e.target);
-      }
+      if (!flowIds.has(e.source) || !flowIds.has(e.target)) return;
+      if (e.type === 'navigate' || e.type === 'uses') return;
+      const children = treeAdj.get(e.source)!;
+      if (!children.includes(e.target)) children.push(e.target);
     });
 
+    // BFS on the routing tree for depth → x column assignment
+    const levels = new Map<string, number>();
     const root = flowNodes.find(n => n.type === 'root') ?? flowNodes[0];
     levels.set(root.id, 0);
-    const queue: string[] = [root.id];
+    const bfsQueue: string[] = [root.id];
     let head = 0;
-    while (head < queue.length) {
-      const cur = queue[head++];
+    while (head < bfsQueue.length) {
+      const cur = bfsQueue[head++];
       const curLevel = levels.get(cur)!;
-      for (const childId of (adj.get(cur) ?? [])) {
+      for (const childId of (treeAdj.get(cur) ?? [])) {
         if (!levels.has(childId)) {
           levels.set(childId, curLevel + 1);
-          queue.push(childId);
+          bfsQueue.push(childId);
         }
       }
     }
-    // Unreachable flow nodes go to their own rightmost column
+    const bfsVisited = new Set(bfsQueue);
     const maxLevel = levels.size > 0 ? Math.max(...levels.values()) : 0;
+    // Unreachable flow nodes (shouldn't happen in practice) get an extra column
     flowNodes.forEach(n => { if (!levels.has(n.id)) levels.set(n.id, maxLevel + 1); });
 
-    // Group by level and assign x/y
-    const byLevel = new Map<number, GraphNode[]>();
-    flowNodes.forEach(n => {
-      const lvl = levels.get(n.id)!;
-      if (!byLevel.has(lvl)) byLevel.set(lvl, []);
-      byLevel.get(lvl)!.push(n);
-    });
+    // Assign x based on BFS depth
+    flowNodes.forEach(n => { n.x = LEFT_PAD + levels.get(n.id)! * COL_W; });
 
-    let maxColSize = 0;
-    byLevel.forEach(col => { maxColSize = Math.max(maxColSize, col.length); });
-    const flowZoneH = Math.max(CANVAS_H * 0.55, maxColSize * ROW_H + 2 * ROW_H);
+    // Compute subtree leaf counts (memoised)
+    const leafCache = new Map<string, number>();
+    function countLeaves(id: string): number {
+      if (leafCache.has(id)) return leafCache.get(id)!;
+      const children = treeAdj.get(id) ?? [];
+      const count = children.length === 0
+        ? 1
+        : children.reduce((s, c) => s + countLeaves(c), 0);
+      leafCache.set(id, count);
+      return count;
+    }
 
-    byLevel.forEach((levelNodes, lvl) => {
-      const x = LEFT_PAD + lvl * COL_W;
-      const colH = levelNodes.length * ROW_H - VGAP;
-      const startY = flowZoneH / 2 - colH / 2 + NODE_H / 2;
-      levelNodes.forEach((n, i) => {
-        n.x = x;
-        n.y = startY + i * ROW_H;
-      });
+    // DFS to assign y: each node is centred in a vertical slot sized by its
+    // subtree's total leaf count, so siblings cluster around their parent.
+    const totalLeaves = countLeaves(root.id);
+    const flowZoneH = Math.max(CANVAS_H * 0.55, totalLeaves * ROW_H + 2 * ROW_H);
+    const topY = NODE_H / 2 + ROW_H;
+
+    function assignY(id: string, slotTop: number, slotBottom: number): void {
+      const node = nodeById.get(id);
+      if (!node) return;
+      node.y = (slotTop + slotBottom) / 2;
+      const children = treeAdj.get(id) ?? [];
+      if (children.length === 0) return;
+      const myLeaves = countLeaves(id);
+      let cursor = slotTop;
+      for (const childId of children) {
+        const childSlotH = (countLeaves(childId) / myLeaves) * (slotBottom - slotTop);
+        assignY(childId, cursor, cursor + childSlotH);
+        cursor += childSlotH;
+      }
+    }
+
+    assignY(root.id, topY, topY + flowZoneH - ROW_H);
+
+    // Place any unreachable flow nodes in a spare column
+    const unreachable = flowNodes.filter(n => !bfsVisited.has(n.id));
+    unreachable.forEach((n, i) => {
+      n.x = LEFT_PAD + (maxLevel + 1) * COL_W;
+      n.y = topY + i * ROW_H;
     });
   }
 
