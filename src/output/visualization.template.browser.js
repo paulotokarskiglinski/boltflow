@@ -65,9 +65,6 @@ const legend    = document.getElementById('legend');
 function init() {
   const m = GRAPH.metadata;
   document.getElementById('proj-name').textContent = m.projectName;
-  document.getElementById('badge-comps').textContent = GRAPH.nodes.length + ' nodes';
-  document.getElementById('badge-routes').textContent = m.totalRoutes + ' routes';
-  document.getElementById('badge-fw').textContent = m.framework.charAt(0).toUpperCase() + m.framework.slice(1);
   document.title = '⚡ Boltflow — ' + m.projectName;
 
   buildDefs();
@@ -411,7 +408,7 @@ function renderGraph() {
     rect.setAttribute('width', NODE_W); rect.setAttribute('height', nodeH);
     rect.setAttribute('rx', CORNER);
     // rect.setAttribute('fill', c.bg);
-    rect.setAttribute('fill', '#19191a');
+    rect.setAttribute('fill', 'var(--surface)');
     rect.setAttribute('stroke', c.border);
     rect.setAttribute('stroke-width', isSelected ? '2' : '1');
     g.appendChild(rect);
@@ -848,7 +845,7 @@ function bindEvents() {
   document.getElementById('routing-btn').addEventListener('click', () => {
     state.routing = state.routing === 'curve' ? 'ortho' : 'curve';
     document.getElementById('routing-btn').textContent =
-      state.routing === 'ortho' ? '⊢ Ortho' : '⌒ Curve';
+      state.routing === 'ortho' ? '⊢' : '⌒';
     renderGraph();
   });
 

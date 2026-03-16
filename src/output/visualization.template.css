@@ -491,7 +491,7 @@ body.light .canvas-wrap {
 /* ── light theme override ── */
 body.light {
   --bg: #F1F5F9;
-  --surface: #FFFFFF;
+  --surface: #FAFAFA;
   --surface2: #F8FAFC;
   --border: #E2E8F0;
   --text: #1E293B;
