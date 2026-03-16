@@ -106,6 +106,9 @@ export function buildGraph(result: AnalysisResult, projectName: string): FlowGra
   // 6. Build edges from route tree
   buildRouteEdges(processedRoutes, null, nodeMap, edges, result.components, result.projectRoot);
 
+  // 6b. Build guard edges: protected node → guard node
+  buildGuardEdges(edges, nodeMap, result.guards ?? []);
+
   // 7. Build "uses" edges from template analysis (component → child component)
   buildUsesEdges(result.components, nodeMap, edges);
 
@@ -251,8 +254,8 @@ function buildRouteEdges(
             : '';
           nodeMap.set(lazyId, {
             id: lazyId,
-            label: `${route.path} (lazy)`,
-            type: 'lazy-module',
+            label: `${route.path}`,
+            type: 'route',
             filePath,
             route: `/${route.path}`,
             x: 0,
@@ -581,6 +584,31 @@ function buildPipeEdges(
       const targetId = pipeByName.get(pipeName);
       if (!targetId || !nodeMap.has(targetId)) continue;
       edges.push({ id: edgeId(), source: comp.id, target: targetId, type: 'uses' });
+    }
+  }
+}
+
+// ─── Guard edges ─────────────────────────────────────────────────────────────
+
+/**
+ * For every route edge that carries guard names, emit a `guard` edge from the
+ * target node (the protected component/route) to each referenced guard node.
+ */
+function buildGuardEdges(
+  edges: GraphEdge[],
+  nodeMap: Map<string, GraphNode>,
+  guards: GuardInfo[]
+): void {
+  const guardByName = new Map(guards.map(g => [g.name, g.id]));
+  // Snapshot the existing edges — we only look at route/lazy-load/child-route edges with guards
+  const routeEdges = edges.filter(e => e.guards?.length);
+  for (const edge of routeEdges) {
+    const protectedId = edge.target;
+    if (!nodeMap.has(protectedId)) continue;
+    for (const guardName of edge.guards!) {
+      const guardId = guardByName.get(guardName);
+      if (!guardId || !nodeMap.has(guardId)) continue;
+      edges.push({ id: edgeId(), source: protectedId, target: guardId, type: 'uses' });
     }
   }
 }

@@ -112,7 +112,7 @@ export interface AnalysisResult {
 
 // ─── Graph model ─────────────────────────────────────────────────────────────
 
-export type NodeType = 'root' | 'component' | 'module' | 'lazy-module' | 'service' | 'directive' | 'pipe' | 'guard';
+export type NodeType = 'root' | 'component' | 'module' | 'lazy-module' | 'route' | 'service' | 'directive' | 'pipe' | 'guard';
 
 
 export interface GraphNode {

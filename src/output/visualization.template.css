@@ -16,22 +16,23 @@
   --accent: #38BDF8;
   --c-root: #FA5252;
   --c-root-b: #FA5252;
-  --c-comp: #059669;
-  --c-comp-b: #047857;
+  --c-comp: #1976d2;
+  --c-comp-b: #1976d2;
   --c-module: #D97706;
   --c-module-b: #B45309;
-  --c-lazy: #64748B;
-  --c-lazy-b: #475569;
-  --c-service: #0891B2;
-  --c-service-b: #0E7490;
-  --c-directive: #4F46E5;
-  --c-directive-b: #4338CA;
-  --c-pipe: #DB2777;
-  --c-pipe-b: #BE185D;
+  --c-route: #64748B;
+  --c-route-b: #475569;
+  --c-service: #ffca28;
+  --c-service-b: #ffca28;
+  --c-directive: #ab47bc;
+  --c-directive-b: #ab47bc;
+  --c-guard: #43A047;
+  --c-guard-b: #43A047;
+  --c-pipe: #00897b;
+  --c-pipe-b: #00897b;
   --e-uses: #94A3B8;
   --e-route: #3B82F6;
   --e-child: #60A5FA;
-  --e-lazy: #FBBF24;
 }
 
 body {
@@ -179,9 +180,9 @@ header {
   border-color: var(--c-module)
 }
 
-.filter-chip[data-type="lazy-module"].active {
-  background: var(--c-lazy);
-  border-color: var(--c-lazy)
+.filter-chip[data-type="directive"].active {
+  background: var(--c-directive);
+  border-color: var(--c-directive)
 }
 
 .filter-chip[data-type="service"].active {
@@ -189,15 +190,21 @@ header {
   border-color: var(--c-service)
 }
 
-.filter-chip[data-type="directive"].active {
-  background: var(--c-directive);
-  border-color: var(--c-directive)
+.filter-chip[data-type="guard"].active {
+  background: var(--c-guard);
+  border-color: var(--c-guard)
 }
 
 .filter-chip[data-type="pipe"].active {
   background: var(--c-pipe);
   border-color: var(--c-pipe)
 }
+
+.filter-chip[data-type="route"].active {
+  background: var(--c-route);
+  border-color: var(--c-route)
+}
+
 
 .comp-list {
   flex: 1;

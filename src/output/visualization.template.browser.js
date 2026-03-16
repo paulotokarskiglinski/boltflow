@@ -11,6 +11,8 @@ const COLORS = {
   component:    { bg:'#1976D2', border:'#1976D2', text:'#fafafa' },
   module:       { bg:'#D97706', border:'#B45309', text:'#fafafa' },
   'lazy-module':{ bg:'#64748B', border:'#64748B', text:'#fafafa' },
+  route:        { bg:'#64748B', border:'#64748B', text:'#fafafa' },
+  // legacy lazy-module kept for backward compat but no longer assigned
   service:      { bg:'#FFCA28', border:'#FFCA28', text:'#fafafa' },
   directive:    { bg:'#AB47BC', border:'#AB47BC', text:'#fafafa' },
   pipe:         { bg:'#00897B', border:'#00897B', text:'#fafafa' },
@@ -33,7 +35,7 @@ const state = {
   panning: false, panStart: null,
   hasPanned: false,
   dragging: null, dragOffset: null,
-  activeFilters: new Set(['root','component','module','lazy-module','service','directive','pipe','guard']),
+  activeFilters: new Set(['root','component','module','route','service','directive','pipe','guard']),
   searchTerm: '',
   routing: 'ortho',
 };
@@ -125,7 +127,7 @@ function buildDefs() {
 // ════════════════════════════════════════════════════════════════════════════
 // FILTERS
 // ════════════════════════════════════════════════════════════════════════════
-const TYPE_LABELS = { root:'Root', component:'Component', module:'Module', 'lazy-module':'Lazy', service:'Service', directive:'Directive', pipe:'Pipe', guard:'Guard' };
+const TYPE_LABELS = { root:'Root', component:'Component', module:'Module', route:'Route', service:'Service', directive:'Directive', pipe:'Pipe', guard:'Guard' };
 function buildFilters() {
   const types = [...new Set(GRAPH.nodes.map(n => n.type))];
   types.forEach(type => {
@@ -156,7 +158,7 @@ function buildLegend() {
   const nodeTypes = [
     { label:'Root',      color:'#FA5252' },
     { label:'Component', color:'#1976d2' },
-    { label:'Lazy',      color:'#64748B' },
+    { label:'Route',     color:'#64748B' },
     { label:'Service',   color:'#ffca28' },
     { label:'Directive', color:'#ab47bc' },
     { label:'Pipe',      color:'#00897b' },
@@ -361,14 +363,14 @@ function renderGraph() {
     path.setAttribute('opacity', edgeOpacity);
     edgesGrp.appendChild(path);
 
-    // Edge label — placed at the arc midpoint so it follows the curve
-    if (edge.label) {
+    // Edge label — only shown when the edge is focused (node selected)
+    if (edge.label && hasFocus && focusedEdges.has(edge.id)) {
       const lbl = svgEl('text');
       lbl.setAttribute('x', midX); lbl.setAttribute('y', midY - 5);
       lbl.setAttribute('text-anchor', 'middle');
       lbl.setAttribute('font-size', '10');
       lbl.setAttribute('fill', color);
-      lbl.setAttribute('opacity', hasFocus ? (focusedEdges.has(edge.id) ? '0.9' : DIM) : '0.9');
+      lbl.setAttribute('opacity', '0.9');
       lbl.setAttribute('pointer-events', 'none');
       lbl.textContent = edge.label;
       edgesGrp.appendChild(lbl);

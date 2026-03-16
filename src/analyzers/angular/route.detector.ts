@@ -115,26 +115,29 @@ function extractRouteFromObject(obj: ObjectLiteralExpression, sourceFilePath: st
   // loadChildren / loadComponent
   const loadChildrenProp = obj.getProperty('loadChildren');
   if (loadChildrenProp && Node.isPropertyAssignment(loadChildrenProp)) {
-    route.loadChildren = (loadChildrenProp as PropertyAssignment)
-      .getInitializer()
-      ?.getText()
-      .trim();
+    const loadChildrenText = (loadChildrenProp as PropertyAssignment)
+      .getInitializer()?.getText().trim() ?? '';
+    // () => DirectIdentifier — static reference to a component used as a lazy route
+    const directRef = loadChildrenText.match(/^\(\)\s*=>\s*([A-Za-z_$][A-Za-z0-9_$]*)$/);
+    if (directRef) route.componentName = directRef[1];
+    route.loadChildren = loadChildrenText;
   }
 
   const loadComponentProp = obj.getProperty('loadComponent');
   if (loadComponentProp && Node.isPropertyAssignment(loadComponentProp)) {
     const loadCompText = (loadComponentProp as PropertyAssignment)
       .getInitializer()?.getText().trim() ?? '';
-    // () => DirectComponent — static reference, treat as a regular component
+    // () => DirectComponent — static reference, lazily loaded
     const directRef = loadCompText.match(/^\(\)\s*=>\s*([A-Za-z_$][A-Za-z0-9_$]*)$/);
     if (directRef) {
       route.componentName = directRef[1];
     } else {
-      // () => import('...').then(m => m.ComponentName) — lazily loaded single component
+      // () => import('...').then(m => m.ComponentName) — lazily loaded via dynamic import
       const thenRef = loadCompText.match(/\.then\(\w+\s*=>\s*\w+\.([A-Za-z_$][A-Za-z0-9_$]*)\)/);
       if (thenRef) route.componentName = thenRef[1];
-      route.loadChildren = loadCompText;
     }
+    // Always mark as lazy (loadComponent is always deferred by Angular)
+    route.loadChildren = loadCompText;
   }
 
   route.sourceFilePath = sourceFilePath;

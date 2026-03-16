@@ -17,6 +17,10 @@ function nextId(): string {
  * a list of ServiceInfo objects.
  */
 export function detectServices(project: Project, projectRoot: string): ServiceInfo[] {
+  const GUARD_INTERFACES = new Set([
+    'CanActivate', 'CanActivateChild', 'CanDeactivate', 'CanMatch', 'CanLoad',
+  ]);
+
   const services: ServiceInfo[] = [];
 
   for (const file of project.getSourceFiles().filter(
@@ -25,6 +29,10 @@ export function detectServices(project: Project, projectRoot: string): ServiceIn
     for (const cls of file.getClasses()) {
       const decorator = cls.getDecorator('Injectable');
       if (!decorator) continue;
+
+      // Skip classes that are guards — they're handled separately
+      const implementedInterfaces = cls.getImplements().map(i => i.getExpression().getText().replace(/<.*>$/, '').trim());
+      if (implementedInterfaces.some(i => GUARD_INTERFACES.has(i))) continue;
 
       const filePath = path.relative(projectRoot, file.getFilePath()).replace(/\\/g, '/');
 
