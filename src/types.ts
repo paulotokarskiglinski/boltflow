@@ -190,5 +190,6 @@ export interface BoltflowResult {
   totalDirectives?: number;
   totalPipes?: number;
   totalRoutes?: number;
+  totalGuards?: number;
   graph: FlowGraph;
 }

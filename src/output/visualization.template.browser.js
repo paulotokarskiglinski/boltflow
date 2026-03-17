@@ -451,7 +451,7 @@ function renderGraph() {
       sub.setAttribute('x', 8);
       sub.setAttribute('y', 40);
       sub.setAttribute('font-size', '10');
-      sub.setAttribute('fill', c.text);
+      sub.setAttribute('fill', 'var(--text-muted)');
       // sub.setAttribute('opacity', '0.65');
       sub.setAttribute('pointer-events', 'none');
       const subText = node.type === 'guard' && node.selector

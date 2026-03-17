@@ -62,6 +62,7 @@ program
       console.log(`${chalk.cyan('Directives:       ')} ${result.totalDirectives}`);
       console.log(`${chalk.cyan('Pipes:            ')} ${result.totalPipes}`);
       console.log(`${chalk.cyan('Routes:           ')} ${result.totalRoutes}`);
+      console.log(`${chalk.cyan('Guards:           ')} ${result.totalGuards}`);
       console.log(`${chalk.cyan('Output path:      ')} ${result.outputPath}`);
 
       if (options.open && format !== 'json') {

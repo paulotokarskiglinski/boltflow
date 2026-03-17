@@ -58,6 +58,7 @@ export async function analyze(
     totalDirectives: graph.nodes.filter(n => n.type === 'directive').length,
     totalPipes: graph.nodes.filter(n => n.type === 'pipe').length,
     totalRoutes: graph.metadata.totalRoutes,
+    totalGuards: graph.nodes.filter(n => n.type === 'guard').length,
     graph,
   };
 }
