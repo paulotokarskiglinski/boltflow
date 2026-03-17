@@ -38,6 +38,8 @@ export interface ComponentInfo {
   usedDirectives: string[];
   /** Pipe names (@Pipe({ name }) used in this component's template */
   usedPipes: string[];
+  /** Angular lifecycle hook interfaces implemented by this component */
+  lifecycleHooks?: string[];
 }
 
 export interface RouteInfo {
@@ -125,6 +127,8 @@ export interface GraphNode {
   inputs?: InputInfo[];
   outputs?: OutputInfo[];
   isStandalone?: boolean;
+  /** Angular lifecycle hooks implemented (e.g. OnInit, OnDestroy) */
+  lifecycleHooks?: string[];
   /** Layout lane: 'flow' = routed hierarchy, 'shared' = reusable components */
   lane?: 'flow' | 'shared';
   /** Pre-computed layout position (pixels) */

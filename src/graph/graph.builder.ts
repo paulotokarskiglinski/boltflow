@@ -31,6 +31,7 @@ export function buildGraph(result: AnalysisResult, projectName: string): FlowGra
       inputs: comp.inputs,
       outputs: comp.outputs,
       isStandalone: comp.isStandalone,
+      lifecycleHooks: comp.lifecycleHooks,
       x: 0,
       y: 0,
     };

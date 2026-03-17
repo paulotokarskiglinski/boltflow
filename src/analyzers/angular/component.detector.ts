@@ -53,6 +53,8 @@ export function detectComponents(
       // Also handle the new `inputs: []` / `outputs: []` array in @Component decorator
       collectDecoratorInputsOutputs(meta, inputs, outputs);
 
+      const lifecycleHooks = collectLifecycleHooks(cls);
+
       components.push({
         id: nextId('cmp'),
         name: cls.getName() ?? selector,
@@ -62,6 +64,7 @@ export function detectComponents(
         isStandalone,
         inputs,
         outputs,
+        lifecycleHooks: lifecycleHooks.length ? lifecycleHooks : undefined,
         usedComponents: [],            // filled later by template analyzer
         routerLinks: [],               // filled later by template analyzer
         hrefs: [],                     // filled later by template analyzer
@@ -177,6 +180,35 @@ function collectInputsOutputs(
       }
     }
   }
+}
+
+function collectLifecycleHooks(cls: ClassDeclaration): string[] {
+  const HOOK_INTERFACES = [
+    'OnInit', 'OnDestroy', 'OnChanges', 'DoCheck',
+    'AfterContentInit', 'AfterContentChecked',
+    'AfterViewInit', 'AfterViewChecked',
+  ];
+  const HOOK_METHODS: Record<string, string> = {
+    OnInit: 'ngOnInit', OnDestroy: 'ngOnDestroy', OnChanges: 'ngOnChanges',
+    DoCheck: 'ngDoCheck', AfterContentInit: 'ngAfterContentInit',
+    AfterContentChecked: 'ngAfterContentChecked', AfterViewInit: 'ngAfterViewInit',
+    AfterViewChecked: 'ngAfterViewChecked',
+  };
+
+  const found = new Set<string>();
+
+  // Via implements clause
+  for (const impl of cls.getImplements()) {
+    const name = impl.getExpression().getText().replace(/<.*>$/, '').trim();
+    if (HOOK_INTERFACES.includes(name)) found.add(name);
+  }
+
+  // Via method presence (covers classes that skip the implements clause)
+  for (const [iface, method] of Object.entries(HOOK_METHODS)) {
+    if (!found.has(iface) && cls.getMethod(method)) found.add(iface);
+  }
+
+  return HOOK_INTERFACES.filter(h => found.has(h));
 }
 
 function extractRequiredFromInputArgs(arg: Node): boolean {

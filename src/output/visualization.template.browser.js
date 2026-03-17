@@ -557,7 +557,7 @@ function selectNode(id) {
     const ifaces = node.selector.split(', ');
     html += '<div class="dp-section"><div class="dp-section-title">Implements (' + ifaces.length + ')</div>';
     ifaces.forEach(i => {
-      html += '<span class="dp-chip" style="border-color:#43A047;color:#43A047">' + escHtml(i) + '</span>';
+      html += '<span class="dp-chip">' + escHtml(i) + '</span>';
     });
     html += '</div>';
   } else if (node.selector) html += row('Selector', code(node.selector));
@@ -575,6 +575,14 @@ function selectNode(id) {
   }
   if (node.isStandalone !== undefined) html += row('Standalone', node.isStandalone ? 'Yes' : 'No');
   html += '</div>';
+
+  if (node.lifecycleHooks && node.lifecycleHooks.length) {
+    html += '<div class="dp-section"><div class="dp-section-title">Implements (' + node.lifecycleHooks.length + ')</div>';
+    node.lifecycleHooks.forEach(h => {
+      html += '<span class="dp-chip">' + escHtml(h) + '</span>';
+    });
+    html += '</div>';
+  }
 
   if (node.inputs && node.inputs.length) {
     html += '<div class="dp-section"><div class="dp-section-title">Inputs ('+node.inputs.length+')</div>';
