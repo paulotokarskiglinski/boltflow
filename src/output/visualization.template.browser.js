@@ -580,7 +580,7 @@ function selectNode(id) {
     html += '<div class="dp-section"><div class="dp-section-title">Inputs ('+node.inputs.length+')</div>';
     node.inputs.forEach(i => {
       const label = escHtml(i.name) + (i.type ? ': <span style="color:var(--text-muted)">' + escHtml(i.type) + '</span>' : '');
-      html += '<span class="dp-chip">' + label + (i.required ? '<sup style="color:#F87171">*</sup>' : '') + '</span>';
+      html += '<span class="dp-chip">' + label + (i.required ? '<span>*</span>' : '') + '</span>';
     });
     html += '</div>';
   }

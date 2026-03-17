@@ -132,17 +132,23 @@ function collectInputsOutputs(
     const initializer = prop.getInitializer();
     if (!initializer) continue;
     const text = initializer.getText();
-    if (text.startsWith('input(') || text.startsWith('input.required(')) {
+    const isSignalInput         = /^input\s*(<[^>]*>)?\s*\(/.test(text);
+    const isSignalInputRequired = /^input\.required\s*(<[^>]*>)?\s*\(/.test(text);
+    const isSignalOutput        = /^output\s*(<[^>]*>)?\s*\(/.test(text);
+    const isSignalModel         = /^model\s*(<[^>]*>)?\s*\(/.test(text);
+    const isSignalModelRequired = /^model\.required\s*(<[^>]*>)?\s*\(/.test(text);
+
+    if (isSignalInput || isSignalInputRequired) {
       const alreadyAdded = inputs.some(i => i.name === prop.getName());
       if (!alreadyAdded) {
         inputs.push({
           name: prop.getName(),
           type: safeTypeText(prop.getType().getText()),
-          required: text.startsWith('input.required('),
+          required: isSignalInputRequired,
         });
       }
     }
-    if (text.startsWith('output(')) {
+    if (isSignalOutput) {
       const alreadyAdded = outputs.some(o => o.name === prop.getName());
       if (!alreadyAdded) {
         outputs.push({
@@ -153,13 +159,13 @@ function collectInputsOutputs(
     }
 
     // Support signal-based model(): model() / model.required() — two-way binding
-    if (text.startsWith('model(') || text.startsWith('model.required(')) {
+    if (isSignalModel || isSignalModelRequired) {
       const alreadyAddedInput = inputs.some(i => i.name === prop.getName());
       if (!alreadyAddedInput) {
         inputs.push({
           name: prop.getName(),
           type: safeTypeText(prop.getType().getText()),
-          required: text.startsWith('model.required('),
+          required: isSignalModelRequired,
         });
       }
       const alreadyAddedOutput = outputs.some(o => o.name === prop.getName() + 'Change');
