@@ -868,6 +868,60 @@ function bindEvents() {
     renderGraph();
   });
 
+  // Export SVG
+  document.getElementById('btn-export').addEventListener('click', () => {
+    const original = document.getElementById('graph');
+    const clone = original.cloneNode(true);
+
+    // Resolve CSS variables by reading computed styles from the real document
+    const bodyStyle = getComputedStyle(document.body);
+    const vars = [
+      '--bg', '--surface', '--surface2', '--border', '--text', '--text-muted', '--accent',
+    ];
+    const resolved = {};
+    vars.forEach(v => { resolved[v] = bodyStyle.getPropertyValue(v).trim(); });
+
+    // Walk every element in the clone and inline fill/stroke/color that use var()
+    clone.querySelectorAll('*').forEach(el => {
+      const attrs = ['fill', 'stroke', 'color'];
+      attrs.forEach(attr => {
+        const val = el.getAttribute(attr);
+        if (val && val.startsWith('var(')) {
+          const key = val.match(/var\(([^)]+)\)/)?.[1];
+          if (key && resolved[key]) el.setAttribute(attr, resolved[key]);
+        }
+      });
+    });
+
+    // Embed a minimal style block so text fonts render in external viewers
+    const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+    style.textContent = `text { font-family: ui-monospace, SFMono-Regular, monospace; }`;
+    clone.insertBefore(style, clone.firstChild);
+
+    // Set explicit width/height from the bounding box of the viewport group.
+    // getBBox() returns coordinates in the viewport's LOCAL space (before its
+    // pan/zoom transform). Strip that transform from the clone so the content
+    // sits at those exact coordinates, then set the viewBox to match.
+    const vp = original.getElementById('viewport');
+    const bb = vp ? vp.getBBox() : original.getBBox();
+    const cloneVp = clone.getElementById('viewport');
+    if (cloneVp) cloneVp.removeAttribute('transform');
+    const pad = 40;
+    clone.setAttribute('width',  bb.width  + pad * 2);
+    clone.setAttribute('height', bb.height + pad * 2);
+    clone.setAttribute('viewBox', `${bb.x - pad} ${bb.y - pad} ${bb.width + pad * 2} ${bb.height + pad * 2}`);
+
+    const serializer = new XMLSerializer();
+    const svgStr = '<?xml version="1.0" encoding="UTF-8"?>\n' + serializer.serializeToString(clone);
+    const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (GRAPH.metadata.projectName || 'boltflow') + '.svg';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
   // Theme toggle
   document.getElementById('theme-btn').addEventListener('click', () => {
     document.body.classList.toggle('light');
