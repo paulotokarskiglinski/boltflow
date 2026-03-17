@@ -38,6 +38,7 @@ const state = {
   activeFilters: new Set(['root','component','module','route','service','directive','pipe','guard']),
   searchTerm: '',
   routing: 'ortho',
+  showLanes: true,
 };
 state.nodeMap = new Map(state.nodes.map(n => [n.id, n]));
 
@@ -259,14 +260,16 @@ function renderGraph() {
     zonesGrp.appendChild(lbl);
   }
 
-  drawZone(flowVis, 'NAVIGATION FLOW', 'rgba(204, 204, 204, 0.05)',  'rgb(204 204 204)');
-  drawZone(compVis, 'COMPONENTS',      'rgba(25, 118, 210, 0.05)',   'rgb(25, 118, 210)');
-  drawZone(svcVis,  'SERVICES',        'rgba(255, 202, 40, 0.05)',   'rgb(255, 202, 40)');
-  drawZone(dirVis,  'DIRECTIVES',      'rgba(171, 71, 188, 0.05)',   'rgb(171, 71, 188)');
-  drawZone(pipeVis, 'PIPES',           'rgba(0, 137, 123, 0.05)',  'rgb(0, 137, 123)');
+  if (state.showLanes) {
+    drawZone(flowVis, 'NAVIGATION FLOW', 'rgba(204, 204, 204, 0.05)',  'rgb(204 204 204)');
+    drawZone(compVis, 'COMPONENTS',      'rgba(25, 118, 210, 0.05)',   'rgb(25, 118, 210)');
+    drawZone(svcVis,  'SERVICES',        'rgba(255, 202, 40, 0.05)',   'rgb(255, 202, 40)');
+    drawZone(dirVis,  'DIRECTIVES',      'rgba(171, 71, 188, 0.05)',   'rgb(171, 71, 188)');
+    drawZone(pipeVis, 'PIPES',           'rgba(0, 137, 123, 0.05)',  'rgb(0, 137, 123)');
+  }
 
   const guardVis = state.nodes.filter(n => vis.has(n.id) && n.type === 'guard');
-  drawZone(guardVis, 'GUARDS',         'rgba(67, 160, 71, 0.05)',   'rgb(67, 160, 71)');
+  if (state.showLanes) drawZone(guardVis, 'GUARDS',         'rgba(67, 160, 71, 0.05)',   'rgb(67, 160, 71)');
 
   // ── Focus set: selected node + its direct neighbours via any edge ────────────
   // Nodes/edges outside this set are dimmed when something is selected.
@@ -852,8 +855,16 @@ function bindEvents() {
   // Routing toggle
   document.getElementById('routing-btn').addEventListener('click', () => {
     state.routing = state.routing === 'curve' ? 'ortho' : 'curve';
-    document.getElementById('routing-btn').textContent =
-      state.routing === 'ortho' ? '⊢' : '⌒';
+    document.getElementById('routing-btn').textContent = state.routing === 'ortho' ? '⊢' : '⌒';
+    renderGraph();
+  });
+
+  // Lanes toggle
+  document.getElementById('lanes-btn').addEventListener('click', () => {
+    state.showLanes = !state.showLanes;
+    document.getElementById('lanes-btn').title = state.showLanes ? 'Hide lanes' : 'Show lanes';
+    document.getElementById('lanes-btn').textContent = state.showLanes ? '▣' : '▦';
+    // document.getElementById('lanes-btn').style.opacity = state.showLanes ? '1' : '0.45';
     renderGraph();
   });
 
