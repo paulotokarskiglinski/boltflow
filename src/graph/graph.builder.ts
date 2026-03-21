@@ -317,17 +317,47 @@ function injectLazyChildRoutes(routes: RouteInfo[]): RouteInfo[] {
   // Track which files we consumed so we can filter them from the top level
   const lazyFileKeys = new Set<string>();
 
+  /**
+   * Given the absolute path of a lazy-loaded MODULE file (e.g. catalog.module.ts),
+   * find the routes that belong to it. Returns the matching key and routes, or null.
+   *
+   * Two strategies are tried in order:
+   *   1. Exact match: routes were defined inline inside the module file itself.
+   *   2. Same-directory fallback: routes live in a co-located file such as
+   *      catalog.routes.ts or catalog-routing.module.ts. This handles the common
+   *      Angular pattern where loadChildren points to the NgModule file but the
+   *      actual Routes array is declared in a separate file in the same folder.
+   */
+  function findRoutesForModule(moduleAbsPath: string): { key: string; routes: RouteInfo[] } | null {
+    const moduleKey = path.normalize(moduleAbsPath).toLowerCase();
+
+    // 1. Exact match
+    const direct = routesByFile.get(moduleKey);
+    if (direct?.length) return { key: moduleKey, routes: direct };
+
+    // 2. Same-directory fallback
+    const moduleDir = path.normalize(path.dirname(moduleAbsPath)).toLowerCase();
+    for (const [fileKey, fileRoutes] of routesByFile) {
+      if (fileKey === moduleKey) continue;
+      const fileDir = path.normalize(path.dirname(fileKey)).toLowerCase();
+      if (fileDir === moduleDir && fileRoutes.length) {
+        return { key: fileKey, routes: fileRoutes };
+      }
+    }
+
+    return null;
+  }
+
   function processRoute(route: RouteInfo): RouteInfo {
     // Discover children from the lazily loaded file (loadChildren only, not loadComponent)
     let extraChildren: RouteInfo[] = [];
     if (route.loadChildren && route.sourceFilePath && !route.componentName) {
       const absPath = resolveLoadChildrenAbsPath(route.loadChildren, route.sourceFilePath);
       if (absPath) {
-        const key = path.normalize(absPath).toLowerCase();
-        const lazyRoutes = routesByFile.get(key);
-        if (lazyRoutes?.length) {
-          lazyFileKeys.add(key);
-          extraChildren = lazyRoutes.map(r => processRoute(r));
+        const found = findRoutesForModule(absPath);
+        if (found) {
+          lazyFileKeys.add(found.key);
+          extraChildren = found.routes.map(r => processRoute(r));
         }
       }
     }
