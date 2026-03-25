@@ -133,7 +133,8 @@ function extractRouteFromObject(obj: ObjectLiteralExpression, sourceFilePath: st
       route.componentName = directRef[1];
     } else {
       // () => import('...').then(m => m.ComponentName) — lazily loaded via dynamic import
-      const thenRef = loadCompText.match(/\.then\(\w+\s*=>\s*\w+\.([A-Za-z_$][A-Za-z0-9_$]*)\)/);
+      // Handles both single-line `.then(m => m.Foo)` and multi-line `.then(\n  (m) => m.Foo\n)`
+      const thenRef = loadCompText.match(/\.then\(\s*\(?\w+\)?\s*=>\s*\w+\.([A-Za-z_$][A-Za-z0-9_$]*)\s*\)/);
       if (thenRef) route.componentName = thenRef[1];
     }
     // Always mark as lazy (loadComponent is always deferred by Angular)

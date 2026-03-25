@@ -114,8 +114,7 @@ export interface AnalysisResult {
 
 // ─── Graph model ─────────────────────────────────────────────────────────────
 
-export type NodeType = 'root' | 'component' | 'module' | 'lazy-module' | 'route' | 'service' | 'directive' | 'pipe' | 'guard';
-
+export type NodeType = 'root' | 'component' | 'module' | 'route' | 'service' | 'directive' | 'pipe' | 'guard';
 
 export interface GraphNode {
   id: string;
@@ -191,5 +190,6 @@ export interface BoltflowResult {
   totalPipes?: number;
   totalRoutes?: number;
   totalGuards?: number;
+  totalModules?: number;
   graph: FlowGraph;
 }

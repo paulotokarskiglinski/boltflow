@@ -56,6 +56,7 @@ program
       spinner.succeed(chalk.green('Analysis complete!'));
 
       console.log('\n' + chalk.bold('Summary'));
+      console.log(`${chalk.cyan('Modules:          ')} ${result.totalModules}`);
       console.log(`${chalk.cyan('Components:       ')} ${result.totalComponents}`);
       console.log(`${chalk.cyan('Shared Components:')} ${result.totalSharedComponents}`);
       console.log(`${chalk.cyan('Services:         ')} ${result.totalServices}`);

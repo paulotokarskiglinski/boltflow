@@ -245,7 +245,7 @@ function buildRouteEdges(
         buildRouteEdges(route.children, targetId, nodeMap, edges, components, projectRoot);
       }
     } else if (route.loadChildren) {
-      // Lazy-loaded module — represent as a virtual lazy-module node.
+      // Lazy-loaded module — represent as a virtual module node.
       const sourceId = parentComponentId ?? findAppComponentNode(nodeMap)?.id ?? null;
       if (sourceId) {
         const lazyId = `lazy_${route.path}`;
@@ -253,10 +253,18 @@ function buildRouteEdges(
           const filePath = route.sourceFilePath
             ? resolveLoadChildrenPath(route.loadChildren, route.sourceFilePath, projectRoot)
             : '';
+          // Extract the exported name from the .then(m => m.ExportedName) expression.
+          // If the name ends with 'Module' it is an NgModule; otherwise it is a plain
+          // Routes array and the node should stay as a 'route' pivot.
+          const moduleNameMatch = route.loadChildren.match(/\.then\(\s*\(?\w+\)?\s*=>\s*\w+\.([A-Za-z_$][A-Za-z0-9_$]*)\s*\)/);
+          const exportedName = moduleNameMatch ? moduleNameMatch[1] : null;
+          const isNgModule = exportedName ? /module$/i.test(exportedName) : false;
+          const nodeLabel = isNgModule ? exportedName! : route.path;
+          const nodeType  = isNgModule ? 'module' : 'route';
           nodeMap.set(lazyId, {
             id: lazyId,
-            label: `${route.path}`,
-            type: 'route',
+            label: nodeLabel,
+            type: nodeType,
             filePath,
             route: `/${route.path}`,
             x: 0,

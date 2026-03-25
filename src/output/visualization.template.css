@@ -18,10 +18,10 @@
   --c-root-b: #FA5252;
   --c-comp: #1976d2;
   --c-comp-b: #1976d2;
-  --c-module: #D97706;
-  --c-module-b: #B45309;
-  --c-route: #64748B;
-  --c-route-b: #475569;
+  --c-module: #FA5252;
+  --c-module-b: #FA5252;
+  --c-route: #43A047;
+  --c-route-b: #43A047;
   --c-service: #ffca28;
   --c-service-b: #ffca28;
   --c-directive: #ab47bc;
@@ -493,6 +493,6 @@ body.light {
   --surface2: #F8FAFC;
   --border: #E2E8F0;
   --text: #1E293B;
-  --text-muted: #64748B;
+  --text-muted: #43A047;
   --accent: #0284C7;
 }

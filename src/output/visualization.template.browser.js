@@ -9,17 +9,15 @@ const NODE_W = 180, NODE_H = 64, CORNER = 4;
 const COLORS = {
   root:         { bg:'#FA5252', border:'#FA5252', text:'#fafafa' },
   component:    { bg:'#1976D2', border:'#1976D2', text:'#fafafa' },
-  module:       { bg:'#D97706', border:'#B45309', text:'#fafafa' },
-  'lazy-module':{ bg:'#64748B', border:'#64748B', text:'#fafafa' },
-  route:        { bg:'#64748B', border:'#64748B', text:'#fafafa' },
-  // legacy lazy-module kept for backward compat but no longer assigned
+  module:       { bg:'#FA5252', border:'#FA5252', text:'#fafafa' },
+  route:        { bg:'#43A047', border:'#43A047', text:'#fafafa' },
   service:      { bg:'#FFCA28', border:'#FFCA28', text:'#fafafa' },
   directive:    { bg:'#AB47BC', border:'#AB47BC', text:'#fafafa' },
   pipe:         { bg:'#00897B', border:'#00897B', text:'#fafafa' },
   guard:        { bg:'#43A047', border:'#43A047', text:'#fafafa' },
 };
 const ROOT_ICON  = '⚡';
-const EDGE_COLOR = { uses:'#94A3B8', route:'#3B82F6', 'child-route':'#60A5FA', 'lazy-load':'#64748B', navigate:'#EC4899' };
+const EDGE_COLOR = { uses:'#94A3B8', route:'#3B82F6', 'child-route':'#60A5FA', 'lazy-load':'#64748b', navigate:'#EC4899' };
 const EDGE_DASH  = { uses:'none', route:'6,3', 'child-route':'4,2', 'lazy-load':'8,4', navigate:'3,3' };
 const EDGE_WIDTH = { uses:1.5, route:2, 'child-route':1.5, 'lazy-load':2, navigate:1.5 };
 
@@ -156,7 +154,8 @@ function buildLegend() {
   const nodeTypes = [
     { label:'Root',      color:'#FA5252' },
     { label:'Component', color:'#1976d2' },
-    { label:'Route',     color:'#64748B' },
+    { label:'Module',    color:'#FA5252' },
+    { label:'Route',     color:'#43A047' },
     { label:'Service',   color:'#ffca28' },
     { label:'Directive', color:'#ab47bc' },
     { label:'Pipe',      color:'#00897b' },
@@ -166,7 +165,7 @@ function buildLegend() {
     { label:'Uses',        color:'#94A3B8', dash:false },
     { label:'Route',       color:'#3B82F6', dash:true },
     { label:'Child route', color:'#60A5FA', dash:true },
-    { label:'Lazy load',   color:'#64748B', dash:true },
+    { label:'Lazy load',   color:'#43A047', dash:true },
     { label:'Navigate',    color:'#EC4899', dash:true },
   ];
   let html = '<div style="font-size:.7rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Legend</div>';

@@ -59,6 +59,7 @@ export async function analyze(
     totalPipes: graph.nodes.filter(n => n.type === 'pipe').length,
     totalRoutes: graph.metadata.totalRoutes,
     totalGuards: graph.nodes.filter(n => n.type === 'guard').length,
+    totalModules: graph.nodes.filter(n => n.type === 'module').length,
     graph,
   };
 }
