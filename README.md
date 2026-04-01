@@ -4,6 +4,8 @@
 
 > Currently supports **Angular**.
 
+![Boltflow screenshot](img/screenshot.jpg)
+
 ## Installation
 
 ```bash

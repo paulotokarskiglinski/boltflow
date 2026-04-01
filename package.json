@@ -1,7 +1,17 @@
 {
   "name": "boltflow",
   "version": "0.1.0",
-  "description": "Generate interactive flow visualizations of your Angular (and more) application component architecture",
+  "author": "paulotokarskiglinski",
+  "license": "MIT",
+  "description": "Boltflow is a developer tool that generates interactive, self-contained visualizations of your application's component architecture",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paulotokarskiglinski/boltflow"
+  },
+  "homepage": "https://github.com/paulotokarskiglinski/boltflow#readme",
+  "bugs": {
+    "url": "https://github.com/paulotokarskiglinski/boltflow/issues"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
@@ -10,24 +20,20 @@
   "scripts": {
     "build": "tsc",
     "postbuild": "node scripts/copy-assets.js",
-    "dev": "tsc --watch",
-    "start": "node dist/cli.js",
-    "test": "jest --passWithNoTests",
-    "prepublishOnly": "npm run build",
-    "demo": "npm run build && node dist/cli.js analyze demo-app --open"
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "angular",
     "visualization",
     "components",
     "flow",
+    "flowchart",
     "architecture",
     "diagram",
     "graph",
-    "devtools"
+    "devtools",
+    "markdown"
   ],
-  "author": "",
-  "license": "MIT",
   "files": [
     "dist",
     "README.md"
