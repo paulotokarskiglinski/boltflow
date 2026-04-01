@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import { FlowGraph, GraphNode, GraphEdge, NodeType, EdgeType } from '../types';
 
 function nodeShape(node: GraphNode): string {
-  const lbl = mermaidLabel(node.label);
+  const lbl = formatLabel(node.label);
   switch (node.type as NodeType) {
     case 'root':       return `([${lbl}])`;
     case 'module':     return `[[${lbl}]]`;
@@ -16,7 +16,7 @@ function nodeShape(node: GraphNode): string {
   }
 }
 
-function mermaidLabel(label: string): string {
+function formatLabel(label: string): string {
   if (/[()[\]{}<>\/\\|"']/.test(label)) {
     return `"${label.replace(/"/g, '#quot;')}"`;
   }
