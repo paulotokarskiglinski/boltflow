@@ -4,7 +4,8 @@ import { getAnalyzer } from './analyzers/framework-registry';
 import { buildGraph } from './graph/graph.builder';
 import { generateHtml } from './output/html.generator';
 import { generateJson } from './output/json.generator';
-import { BoltflowOptions, BoltflowResult, FlowGraph } from './types';
+import { generateMd } from './output/md.generator';
+import { BoltflowOptions, BoltflowResult } from './types';
 
 export async function analyze(
   options: BoltflowOptions,
@@ -30,28 +31,41 @@ export async function analyze(
 
   progress('Writing output…');
   let outputPath: string;
+  let mdPath: string | undefined;
 
-  if (format === 'html' || format === 'both') {
+  if (format === 'html' || format === 'both' || format === 'all') {
     const htmlPath = ensureExtension(output, '.html');
     ensureDir(htmlPath);
     generateHtml(graph, htmlPath);
     outputPath = htmlPath;
   }
 
-  if (format === 'json' || format === 'both') {
+  if (format === 'json' || format === 'both' || format === 'all') {
     const jsonPath = ensureExtension(output, '.json');
     ensureDir(jsonPath);
     generateJson(graph, jsonPath);
     outputPath = jsonPath;
   }
 
-  // Default to html path when both formats were written
+  if (format === 'md' || format === 'all') {
+    const mdFilePath = ensureExtension(output, '.md');
+    ensureDir(mdFilePath);
+    generateMd(graph, mdFilePath);
+    mdPath = mdFilePath;
+    outputPath = mdFilePath;
+  }
+
+  // Default primary outputPath
   if (format === 'both') {
+    outputPath = ensureExtension(output, '.html');
+  }
+  if (format === 'all') {
     outputPath = ensureExtension(output, '.html');
   }
 
   return {
     outputPath: outputPath!,
+    mdPath,
     totalComponents: graph.nodes.filter(n => n.type === 'root' || n.type === 'component').length,
     totalSharedComponents: graph.nodes.filter(n => (n.type === 'root' || n.type === 'component') && n.lane === 'shared').length,
     totalServices: graph.nodes.filter(n => n.type === 'service').length,
@@ -69,6 +83,7 @@ export async function analyze(
 export { buildGraph } from './graph/graph.builder';
 export { generateHtml } from './output/html.generator';
 export { generateJson } from './output/json.generator';
+export { generateMd } from './output/md.generator';
 export type { BoltflowOptions, BoltflowResult, FlowGraph } from './types';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

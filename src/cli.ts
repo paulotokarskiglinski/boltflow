@@ -22,7 +22,7 @@ program
   .option('-o, --output <path>', 'Output file path (without extension)', 'boltflow-output')
   .option(
     '-f, --format <format>',
-    'Output format: html | json | both',
+    'Output format: html | json | md | both | all',
     'html'
   )
   .option('--open', 'Open the HTML output in the browser after generation', false)
@@ -32,7 +32,7 @@ program
     console.log(chalk.bold.cyan('\n⚡ Boltflow'));
     console.log(chalk.gray(`  Analyzing: ${resolvedProject}\n`));
 
-    const format = (options.format ?? 'html') as 'html' | 'json' | 'both';
+    const format = (options.format ?? 'html') as 'html' | 'json' | 'md' | 'both' | 'all';
 
     const opts: BoltflowOptions = {
       projectPath: resolvedProject,
@@ -65,10 +65,13 @@ program
       console.log(`${chalk.cyan('Routes:           ')} ${result.totalRoutes}`);
       console.log(`${chalk.cyan('Guards:           ')} ${result.totalGuards}`);
       console.log(`${chalk.cyan('Output path:      ')} ${result.outputPath}`);
+      if (result.mdPath) {
+        console.log(`${chalk.cyan('.MD path:         ')} ${result.mdPath}`);
+      }
 
-      if (options.open && format !== 'json') {
+      if (options.open && format !== 'json' && format !== 'md') {
         const open = (await import('open')).default;
-        const htmlPath = format === 'both'
+        const htmlPath = (format === 'both' || format === 'all')
           ? result.outputPath.replace(/\.json$/, '.html')
           : result.outputPath;
         await open(htmlPath);

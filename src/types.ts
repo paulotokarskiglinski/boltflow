@@ -176,13 +176,14 @@ export interface BoltflowOptions {
   /** Absolute path for the output file (without extension) */
   output?: string;
   /** Output format */
-  format?: 'html' | 'json' | 'both';
+  format?: 'html' | 'json' | 'md' | 'both' | 'all';
   /** Open the HTML output in the browser after generation */
   open?: boolean;
 }
 
 export interface BoltflowResult {
   outputPath: string;
+  mdPath?: string;
   totalComponents?: number;
   totalSharedComponents?: number;
   totalServices?: number;
