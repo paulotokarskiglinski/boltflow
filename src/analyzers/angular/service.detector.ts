@@ -3,6 +3,7 @@ import {
   Node,
   ObjectLiteralExpression,
   PropertyAssignment,
+  NewExpression,
 } from 'ts-morph';
 import * as path from 'path';
 import { ServiceInfo } from '../../types';
@@ -112,6 +113,112 @@ export function detectServiceUsages(
       }
 
       comp.injectedServices = [...injected];
+    }
+  }
+}
+
+/**
+ * Post-processing: scan all class bodies for call expressions whose first argument
+ * is a component class reference (e.g. `this.dialog.open(MyDialogComponent, ...)` or
+ * `this.vcr.createComponent(DynamicComponent)`). Populates component.dynamicCallers
+ * in place so the graph can emit "uses" edges from the caller to the component.
+ *
+ * Only method names commonly associated with dynamic instantiation are matched to
+ * reduce false positives from unrelated calls like console.log(SomeComponent).
+ */
+export function detectDynamicComponentUsages(
+  project: Project,
+  components: import('../../types').ComponentInfo[]
+): void {
+  const DYNAMIC_METHODS = new Set([
+    'open', 'create', 'createComponent', 'show', 'present',
+    'launch', 'render', 'display', 'push', 'attach', 'load',
+  ]);
+
+  /** CDK / common portal wrapper constructors whose first arg is the component class. */
+  const PORTAL_CTORS = new Set([
+    'ComponentPortal', 'TemplatePortal', 'DomPortal',
+  ]);
+
+  /**
+   * Given a call/new-expression argument, returns the component class name if:
+   *  - the argument is a direct identifier: `MyComponent`
+   *  - the argument is a portal new-expression: `new ComponentPortal(MyComponent, ...)`
+   */
+  function resolveComponentArg(arg: Node): string | undefined {
+    if (Node.isIdentifier(arg)) return arg.getText();
+    if (Node.isNewExpression(arg)) {
+      const ctorName = (arg as NewExpression).getExpression().getText();
+      if (PORTAL_CTORS.has(ctorName)) {
+        const innerArgs = (arg as NewExpression).getArguments();
+        if (innerArgs.length && Node.isIdentifier(innerArgs[0])) {
+          return innerArgs[0].getText();
+        }
+      }
+    }
+    return undefined;
+  }
+
+  const componentByName = new Map(components.map(c => [c.name, c]));
+
+  for (const file of project.getSourceFiles().filter(
+    f => !f.getFilePath().includes('node_modules') && !f.getFilePath().endsWith('.spec.ts')
+  )) {
+    for (const cls of file.getClasses()) {
+      const callerName = cls.getName();
+      if (!callerName) continue;
+
+      cls.forEachDescendant(node => {
+        // ── Pattern 1: someMethod(ComponentClass) ────────────────────────────
+        // e.g. this.modalSvc.open(MyComponent, opts)
+        if (Node.isCallExpression(node)) {
+          const args = node.getArguments();
+          if (!args.length) return;
+
+          const expr = node.getExpression();
+          let methodName: string;
+          if (Node.isPropertyAccessExpression(expr)) {
+            methodName = expr.getName();
+          } else if (Node.isIdentifier(expr)) {
+            methodName = expr.getText();
+          } else {
+            return;
+          }
+          if (!DYNAMIC_METHODS.has(methodName)) return;
+
+          // Resolve the component name from either a direct identifier or a
+          // portal wrapper: new ComponentPortal(X) / new TemplatePortal(X)
+          const compName = resolveComponentArg(args[0]);
+          if (!compName || compName === callerName) return;
+          const comp = componentByName.get(compName);
+          if (!comp) return;
+
+          if (!comp.dynamicCallers) comp.dynamicCallers = [];
+          if (!comp.dynamicCallers.includes(callerName)) {
+            comp.dynamicCallers.push(callerName);
+          }
+          return;
+        }
+
+        // ── Pattern 2: new ComponentPortal(ComponentClass) ───────────────────
+        // Catches portal creation even when assigned to a variable before attach.
+        // e.g. const portal = new ComponentPortal(MyComponent);
+        if (Node.isNewExpression(node)) {
+          const ctorName = (node as NewExpression).getExpression().getText();
+          if (!PORTAL_CTORS.has(ctorName)) return;
+          const portalArgs = (node as NewExpression).getArguments();
+          if (!portalArgs.length) return;
+          const compName = resolveComponentArg(portalArgs[0]);
+          if (!compName || compName === callerName) return;
+          const comp = componentByName.get(compName);
+          if (!comp) return;
+
+          if (!comp.dynamicCallers) comp.dynamicCallers = [];
+          if (!comp.dynamicCallers.includes(callerName)) {
+            comp.dynamicCallers.push(callerName);
+          }
+        }
+      });
     }
   }
 }

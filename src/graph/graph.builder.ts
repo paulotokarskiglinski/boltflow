@@ -120,6 +120,10 @@ export function buildGraph(result: AnalysisResult, projectName: string): FlowGra
   //    and service-to-service "uses" edges
   buildServiceEdges(result.components, result.services ?? [], nodeMap, edges);
 
+  // 9b. Build "uses" edges for components dynamically instantiated via service calls
+  //     (e.g. dialog.open(MyComponent), vcr.createComponent(MyComponent))
+  buildDynamicUsageEdges(result.components, result.services ?? [], nodeMap, edges);
+
   // 10. Mark service nodes involved in circular dependency cycles
   markCircularServiceEdges(result.services ?? [], edges, nodeMap);
 
@@ -535,6 +539,36 @@ function buildServiceEdges(
       const targetId = serviceByName.get(depName);
       if (!targetId || !nodeMap.has(targetId)) continue;
       edges.push({ id: edgeId(), source: svc.id, target: targetId, type: 'uses' });
+    }
+  }
+}
+
+/**
+ * Emit "uses" edges from any class (service or component) that dynamically
+ * instantiates a component via patterns like `service.open(MyComponent)` or
+ * `vcr.createComponent(MyComponent)`. Relies on component.dynamicCallers being
+ * populated by detectDynamicComponentUsages().
+ */
+function buildDynamicUsageEdges(
+  components: ComponentInfo[],
+  services: ServiceInfo[],
+  nodeMap: Map<string, GraphNode>,
+  edges: GraphEdge[]
+): void {
+  // Build a name → id lookup for all possible callers (components + services)
+  const callerIds = new Map<string, string>();
+  for (const comp of components) callerIds.set(comp.name, comp.id);
+  for (const svc of services) callerIds.set(svc.name, svc.id);
+
+  for (const comp of components) {
+    if (!comp.dynamicCallers?.length) continue;
+    const targetId = comp.id;
+    if (!nodeMap.has(targetId)) continue;
+
+    for (const callerName of comp.dynamicCallers) {
+      const sourceId = callerIds.get(callerName);
+      if (!sourceId || sourceId === targetId || !nodeMap.has(sourceId)) continue;
+      edges.push({ id: edgeId(), source: sourceId, target: targetId, type: 'uses' });
     }
   }
 }
