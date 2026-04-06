@@ -143,9 +143,22 @@ function extractRouteFromObject(obj: ObjectLiteralExpression, sourceFilePath: st
 
   route.sourceFilePath = sourceFilePath;
 
-  // Guards: canActivate, canActivateChild, canDeactivate, canMatch, canLoad
-  const guardKeys = ['canActivate', 'canActivateChild', 'canDeactivate', 'canMatch', 'canLoad'];
+  // Guards: canActivate, canActivateChild, canDeactivate, canMatch, canLoad,'canActivateFn', 'canActivateChildFn', 'canDeactivateFn', 'canMatchFn', 'canLoadFn'
+  const guardKeys = [
+    'canActivate',
+    'canActivateChild',
+    'canDeactivate',
+    'canMatch',
+    'canLoad',
+    'canActivateFn', 
+    'canActivateChildFn', 
+    'canDeactivateFn', 
+    'canMatchFn', 
+    'canLoadFn'
+  ];
+
   const allGuards: string[] = [];
+
   for (const guardKey of guardKeys) {
     const guardPropNode = obj.getProperty(guardKey);
     if (!guardPropNode || !Node.isPropertyAssignment(guardPropNode)) continue;
