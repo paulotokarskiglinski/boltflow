@@ -40,6 +40,9 @@ export interface ComponentInfo {
   usedPipes: string[];
   /** Angular lifecycle hook interfaces implemented by this component */
   lifecycleHooks?: string[];
+  /** Class names (services/components) that dynamically instantiate this component
+   *  via patterns like service.open(ComponentClass) or vcr.createComponent(ComponentClass) */
+  dynamicCallers?: string[];
 }
 
 export interface RouteInfo {
