@@ -1,4 +1,4 @@
-import { Project } from 'ts-morph';
+import { Project, Node } from 'ts-morph';
 import * as path from 'path';
 import { GuardInfo } from '../../types';
 
@@ -10,7 +10,8 @@ function nextId(): string {
 /**
  * Scans all source files for classes that implement any of Angular's route
  * guard interfaces: CanActivate, CanActivateChild, CanDeactivate, CanMatch,
- * CanLoad. Detection is based on the `implements` clause — not file name or
+ * CanLoad, 'CanActivateFn', 'CanActivateChildFn', 'CanDeactivateFn', 'CanMatchFn', 'CanLoadFn'. 
+ * Detection is based on the `implements` clause — not file name or
  * class name convention.
  */
 export function detectGuards(project: Project, projectRoot: string): GuardInfo[] {
@@ -19,7 +20,15 @@ export function detectGuards(project: Project, projectRoot: string): GuardInfo[]
     'CanActivateChild',
     'CanDeactivate',
     'CanMatch',
-    'CanLoad',
+    'CanLoad'
+  ]);
+
+  const FUNCTIONAL_GUARD_TYPES = new Set([
+    'CanActivateFn',
+    'CanActivateChildFn',
+    'CanDeactivateFn',
+    'CanMatchFn',
+    'CanLoadFn'
   ]);
 
   const guards: GuardInfo[] = [];
@@ -45,6 +54,25 @@ export function detectGuards(project: Project, projectRoot: string): GuardInfo[]
         name: cls.getName() ?? filePath,
         filePath,
         interfaces: matchedInterfaces,
+      });
+    }
+
+    // Functional guards
+    for (const varDecl of file.getVariableDeclarations()) {
+      const typeNode = varDecl.getTypeNode();
+      if (!typeNode) continue;
+
+      const typeText = typeNode.getText().trim();
+      const baseType = typeText.replace(/<.*>$/, '');
+      if (!FUNCTIONAL_GUARD_TYPES.has(baseType)) continue;
+
+      const filePath = path.relative(projectRoot, file.getFilePath()).replace(/\\/g, '/');
+
+      guards.push({
+        id: nextId(),
+        name: varDecl.getName(),
+        filePath,
+        interfaces: [baseType],
       });
     }
   }

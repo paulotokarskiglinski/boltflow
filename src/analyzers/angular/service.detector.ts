@@ -18,7 +18,16 @@ function nextId(): string {
  */
 export function detectServices(project: Project, projectRoot: string): ServiceInfo[] {
   const GUARD_INTERFACES = new Set([
-    'CanActivate', 'CanActivateChild', 'CanDeactivate', 'CanMatch', 'CanLoad',
+    'CanActivate',
+    'CanActivateChild',
+    'CanDeactivate',
+    'CanMatch',
+    'CanLoad',
+    'CanActivateFn', 
+    'CanActivateChildFn', 
+    'CanDeactivateFn', 
+    'CanMatchFn', 
+    'CanLoadFn'
   ]);
 
   const services: ServiceInfo[] = [];
