@@ -21,7 +21,8 @@ function nextId(prefix: string): string {
  */
 export function detectComponents(
   project: Project,
-  projectRoot: string
+  projectRoot: string,
+  defaultStandalone = false
 ): ComponentInfo[] {
   const components: ComponentInfo[] = [];
 
@@ -39,7 +40,7 @@ export function detectComponents(
 
       const selector = getStringProp(meta, 'selector') ?? toSelector(cls.getName() ?? 'unknown');
       const templateUrl = getStringProp(meta, 'templateUrl');
-      const isStandalone = getBoolProp(meta, 'standalone') ?? false;
+      const isStandalone = getBoolProp(meta, 'standalone') ?? defaultStandalone;
 
       const filePath = path.relative(projectRoot, file.getFilePath()).replace(/\\/g, '/');
       const templatePath = templateUrl
