@@ -46,8 +46,11 @@ export class AngularAnalyzer implements IAnalyzer {
 
     const project = buildProject(projectPath, tsConfigPath);
 
+    const angularMajor = resolveAngularMajorVersion(projectPath);
+    const defaultStandalone = angularMajor >= 19;
+
     progress('Detecting components…');
-    const components = detectComponents(project, projectPath);
+    const components = detectComponents(project, projectPath, defaultStandalone);
 
     progress('Detecting routes…');
     const routes = detectRoutes(project);
@@ -234,6 +237,22 @@ function collectInlineTemplates(
  * Assigns component IDs to routes by matching the route's componentName
  * against detected components (by class name).
  */
+/**
+ * Reads the Angular major version from the project's node_modules.
+ * Falls back to 0 if it cannot be determined.
+ */
+function resolveAngularMajorVersion(projectPath: string): number {
+  try {
+    const corePkg = path.join(projectPath, 'node_modules', '@angular', 'core', 'package.json');
+    if (!fs.existsSync(corePkg)) return 0;
+    const pkg = JSON.parse(fs.readFileSync(corePkg, 'utf-8')) as { version?: string };
+    const major = parseInt((pkg.version ?? '0').split('.')[0], 10);
+    return isNaN(major) ? 0 : major;
+  } catch {
+    return 0;
+  }
+}
+
 function crossReferenceRoutes(
   routes: Array<import('../../types').RouteInfo>,
   components: ComponentInfo[]
