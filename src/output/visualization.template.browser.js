@@ -441,7 +441,7 @@ function renderGraph() {
     label.setAttribute('font-weight', '600');
     label.setAttribute('fill', c.border);
     label.setAttribute('pointer-events', 'none');
-    label.textContent = truncate(node.label, 18);
+    label.textContent = truncate(node.label, 20);
     g.appendChild(label);
 
     // Sub-label (selector or route)
@@ -454,11 +454,11 @@ function renderGraph() {
       // sub.setAttribute('opacity', '0.65');
       sub.setAttribute('pointer-events', 'none');
       const subText = node.type === 'guard' && node.selector
-        ? truncate(node.selector, 26)
+        ? truncate(node.selector, 32)
         : node.route ? 'route: ' + node.route
         : node.selector === 'app-root' ? 'app-root'
         : 'selector: ' + node.selector;
-      sub.textContent = truncate(subText, 26);
+      sub.textContent = truncate(subText, 32);
       g.appendChild(sub);
     }
 
@@ -621,10 +621,6 @@ function selectNode(id) {
         }
       });
       html += '</div>';
-    } else {
-      html += '<div class="dp-section"><div class="dp-section-title" style="color:#F97316">⚠ Unused Guard</div>'
-        + '<div style="font-size:.8rem;color:var(--text-muted)">This guard is not referenced by any detected route.</div>'
-        + '</div>';
     }
   }
 
