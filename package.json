@@ -1,6 +1,6 @@
 {
   "name": "boltflow",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "paulotokarskiglinski",
   "license": "MIT",
   "description": "Boltflow is a developer tool that generates interactive, self-contained visualizations of your application's component architecture",
