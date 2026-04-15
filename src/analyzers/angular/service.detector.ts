@@ -118,8 +118,9 @@ export function detectServiceUsages(
 }
 
 /**
- * Post-processing: scan all class bodies for call expressions whose first argument
- * is a component class reference (e.g. `this.dialog.open(MyDialogComponent, ...)` or
+ * Post-processing: scan all class bodies AND top-level arrow/function expressions
+ * (e.g. functional guards) for call expressions whose first argument is a component
+ * class reference (e.g. `this.dialog.open(MyDialogComponent, ...)` or
  * `this.vcr.createComponent(DynamicComponent)`). Populates component.dynamicCallers
  * in place so the graph can emit "uses" edges from the caller to the component.
  *
@@ -161,64 +162,78 @@ export function detectDynamicComponentUsages(
 
   const componentByName = new Map(components.map(c => [c.name, c]));
 
+  /**
+   * Walk all descendants of `scopeNode`, registering any dynamic component
+   * instantiation as a caller relationship on the target ComponentInfo.
+   */
+  function scanScope(scopeNode: Node, callerName: string): void {
+    scopeNode.forEachDescendant(node => {
+      // ── Pattern 1: someMethod(ComponentClass) ────────────────────────────
+      // e.g. this.modalSvc.open(MyComponent, opts)
+      if (Node.isCallExpression(node)) {
+        const args = node.getArguments();
+        if (!args.length) return;
+
+        const expr = node.getExpression();
+        let methodName: string;
+        if (Node.isPropertyAccessExpression(expr)) {
+          methodName = expr.getName();
+        } else if (Node.isIdentifier(expr)) {
+          methodName = expr.getText();
+        } else {
+          return;
+        }
+        if (!DYNAMIC_METHODS.has(methodName)) return;
+
+        const compName = resolveComponentArg(args[0]);
+        if (!compName || compName === callerName) return;
+        const comp = componentByName.get(compName);
+        if (!comp) return;
+
+        if (!comp.dynamicCallers) comp.dynamicCallers = [];
+        if (!comp.dynamicCallers.includes(callerName)) {
+          comp.dynamicCallers.push(callerName);
+        }
+        return;
+      }
+
+      // ── Pattern 2: new ComponentPortal(ComponentClass) ───────────────────
+      // Catches portal creation even when assigned to a variable before attach.
+      // e.g. const portal = new ComponentPortal(MyComponent);
+      if (Node.isNewExpression(node)) {
+        const ctorName = (node as NewExpression).getExpression().getText();
+        if (!PORTAL_CTORS.has(ctorName)) return;
+        const portalArgs = (node as NewExpression).getArguments();
+        if (!portalArgs.length) return;
+        const compName = resolveComponentArg(portalArgs[0]);
+        if (!compName || compName === callerName) return;
+        const comp = componentByName.get(compName);
+        if (!comp) return;
+
+        if (!comp.dynamicCallers) comp.dynamicCallers = [];
+        if (!comp.dynamicCallers.includes(callerName)) {
+          comp.dynamicCallers.push(callerName);
+        }
+      }
+    });
+  }
+
   for (const file of project.getSourceFiles().filter(
     f => !f.getFilePath().includes('node_modules') && !f.getFilePath().endsWith('.spec.ts')
   )) {
+    // Class bodies (services, components, etc.)
     for (const cls of file.getClasses()) {
       const callerName = cls.getName();
       if (!callerName) continue;
+      scanScope(cls, callerName);
+    }
 
-      cls.forEachDescendant(node => {
-        // ── Pattern 1: someMethod(ComponentClass) ────────────────────────────
-        // e.g. this.modalSvc.open(MyComponent, opts)
-        if (Node.isCallExpression(node)) {
-          const args = node.getArguments();
-          if (!args.length) return;
-
-          const expr = node.getExpression();
-          let methodName: string;
-          if (Node.isPropertyAccessExpression(expr)) {
-            methodName = expr.getName();
-          } else if (Node.isIdentifier(expr)) {
-            methodName = expr.getText();
-          } else {
-            return;
-          }
-          if (!DYNAMIC_METHODS.has(methodName)) return;
-
-          // Resolve the component name from either a direct identifier or a
-          // portal wrapper: new ComponentPortal(X) / new TemplatePortal(X)
-          const compName = resolveComponentArg(args[0]);
-          if (!compName || compName === callerName) return;
-          const comp = componentByName.get(compName);
-          if (!comp) return;
-
-          if (!comp.dynamicCallers) comp.dynamicCallers = [];
-          if (!comp.dynamicCallers.includes(callerName)) {
-            comp.dynamicCallers.push(callerName);
-          }
-          return;
-        }
-
-        // ── Pattern 2: new ComponentPortal(ComponentClass) ───────────────────
-        // Catches portal creation even when assigned to a variable before attach.
-        // e.g. const portal = new ComponentPortal(MyComponent);
-        if (Node.isNewExpression(node)) {
-          const ctorName = (node as NewExpression).getExpression().getText();
-          if (!PORTAL_CTORS.has(ctorName)) return;
-          const portalArgs = (node as NewExpression).getArguments();
-          if (!portalArgs.length) return;
-          const compName = resolveComponentArg(portalArgs[0]);
-          if (!compName || compName === callerName) return;
-          const comp = componentByName.get(compName);
-          if (!comp) return;
-
-          if (!comp.dynamicCallers) comp.dynamicCallers = [];
-          if (!comp.dynamicCallers.includes(callerName)) {
-            comp.dynamicCallers.push(callerName);
-          }
-        }
-      });
+    // Top-level arrow functions / function expressions (e.g. functional guards)
+    for (const varDecl of file.getVariableDeclarations()) {
+      const init = varDecl.getInitializer();
+      if (!init) continue;
+      if (!Node.isArrowFunction(init) && !Node.isFunctionExpression(init)) continue;
+      scanScope(init, varDecl.getName());
     }
   }
 }

@@ -121,8 +121,8 @@ export function buildGraph(result: AnalysisResult, projectName: string): FlowGra
   buildServiceEdges(result.components, result.services ?? [], nodeMap, edges);
 
   // 9b. Build "uses" edges for components dynamically instantiated via service calls
-  //     (e.g. dialog.open(MyComponent), vcr.createComponent(MyComponent))
-  buildDynamicUsageEdges(result.components, result.services ?? [], nodeMap, edges);
+  //     or functional guards (e.g. dialog.open(MyComponent), vcr.createComponent(MyComponent))
+  buildDynamicUsageEdges(result.components, result.services ?? [], result.guards ?? [], nodeMap, edges);
 
   // 10. Mark service nodes involved in circular dependency cycles
   markCircularServiceEdges(result.services ?? [], edges, nodeMap);
@@ -544,21 +544,23 @@ function buildServiceEdges(
 }
 
 /**
- * Emit "uses" edges from any class (service or component) that dynamically
- * instantiates a component via patterns like `service.open(MyComponent)` or
- * `vcr.createComponent(MyComponent)`. Relies on component.dynamicCallers being
- * populated by detectDynamicComponentUsages().
+ * Emit "uses" edges from any class or function (service, component, or functional
+ * guard) that dynamically instantiates a component via patterns like
+ * `service.open(MyComponent)` or `vcr.createComponent(MyComponent)`.
+ * Relies on component.dynamicCallers being populated by detectDynamicComponentUsages().
  */
 function buildDynamicUsageEdges(
   components: ComponentInfo[],
   services: ServiceInfo[],
+  guards: GuardInfo[],
   nodeMap: Map<string, GraphNode>,
   edges: GraphEdge[]
 ): void {
-  // Build a name → id lookup for all possible callers (components + services)
+  // Build a name → id lookup for all possible callers (components + services + guards)
   const callerIds = new Map<string, string>();
   for (const comp of components) callerIds.set(comp.name, comp.id);
   for (const svc of services) callerIds.set(svc.name, svc.id);
+  for (const guard of guards) callerIds.set(guard.name, guard.id);
 
   for (const comp of components) {
     if (!comp.dynamicCallers?.length) continue;
