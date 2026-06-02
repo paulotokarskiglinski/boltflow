@@ -531,12 +531,33 @@ body.light .view-toggle button:hover {
   bottom: 0;
   overflow-y: auto;
   padding: 24px;
+  z-index: 5;
+  background-color: var(--bg);
+}
+
+.cv-group {
+  margin-bottom: 32px;
+}
+.cv-group:last-child {
+  margin-bottom: 0;
+}
+.cv-group-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cv-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 20px;
   align-content: start;
-  z-index: 5;
-  background-color: var(--bg);
 }
 
 .containment-layer.hidden {

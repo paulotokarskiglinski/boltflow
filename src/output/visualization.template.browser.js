@@ -157,9 +157,9 @@
   function buildLegend() {
     const nodeTypes = [
       { label: 'Root', color: '#FA5252' },
-      { label: 'Component', color: '#1976d2' },
       { label: 'Module', color: '#FA5252' },
       { label: 'Route', color: '#43A047' },
+      { label: 'Component', color: '#1976d2' },
       { label: 'Service', color: '#ffca28' },
       { label: 'Directive', color: '#ab47bc' },
       { label: 'Pipe', color: '#00897b' },
@@ -167,9 +167,9 @@
     ];
     const edgeTypes = [
       { label: 'Uses', color: '#94A3B8', dash: false },
+      { label: 'Lazy load', color: '#64748b', dash: true },
       { label: 'Route', color: '#3B82F6', dash: true },
       { label: 'Child route', color: '#60A5FA', dash: true },
-      { label: 'Lazy load', color: '#64748b', dash: true },
       { label: 'Navigate', color: '#EC4899', dash: true },
     ];
     let html = '<div style="font-size:.7rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Legend</div>';
@@ -567,60 +567,80 @@
 
     const targetedIds = new Set(state.edges.map(e => e.target));
 
-    // For Containment View, we don't draw routes/flow, just usages
-    visNodes.forEach(node => {
-      // Find everything this node uses directly (first level)
-      const usesEdges = state.edges.filter(e => e.source === node.id && (e.type === 'uses' || e.type === 'child-route' || e.type === 'route' || e.type === 'lazy-load'));
-      const childrenIds = new Set(usesEdges.map(e => e.target));
-      const childrenNodes = state.nodes.filter(n => childrenIds.has(n.id) && vis.has(n.id));
+    const groups = [
+      { title: 'Root and Modules', types: ['root', 'module'] },
+      { title: 'Routes', types: ['route'] },
+      { title: 'Components', types: ['component'] },
+      { title: 'Services', types: ['service'] },
+      { title: 'Directives', types: ['directive'] },
+      { title: 'Pipes', types: ['pipe'] },
+      { title: 'Guards', types: ['guard'] }
+    ];
 
-      // Sort children by type for nicer display
-      childrenNodes.sort((a, b) => a.type.localeCompare(b.type));
+    // For Containment View, we group nodes by type
+    groups.forEach(group => {
+      const groupNodes = visNodes.filter(n => group.types.includes(n.type));
+      if (groupNodes.length === 0) return;
 
-      let chipsHtml = '';
-      if (childrenNodes.length === 0) {
-        chipsHtml = '<div class="cv-empty">No dependencies</div>';
-      } else {
-        childrenNodes.forEach(child => {
-          const cColor = COLORS[child.type] || COLORS.component;
-          const chipOpacity = hasFocus ? (focusedNodes.has(child.id) ? '1' : DIM) : '1';
-          chipsHtml += `<div class="cv-chip" style="border-color:${cColor.border}; opacity:${chipOpacity}; transition:opacity 0.2s" onclick="selectNode('${child.id}')"><svg width="12" height="12" style="fill: ${cColor.border}; flex-shrink: 0;"><use href="#icon-angular"></use></svg>${escHtml(child.label)}</div>`;
-        });
-      }
+      html += `<div class="cv-group">
+        <div class="cv-group-title">${group.title} <span class="badge">${groupNodes.length}</span></div>
+        <div class="cv-grid">`;
 
-      const color = COLORS[node.type] || COLORS.component;
-      const svgIcon = `<svg width="18" height="18" style="fill: ${color.border}; flex-shrink: 0;"><use href="#icon-angular"></use></svg>`;
-      const titleWithIcon = `<div style="display:flex;align-items:center;gap:6px;">${svgIcon}<span>${escHtml(node.label)}</span></div>`;
-      const subtitleContent = node.selector ? escHtml(node.selector) : (TYPE_LABELS[node.type] || node.type);
-      const nodeOpacity = hasFocus ? (focusedNodes.has(node.id) ? '1' : DIM) : '1';
+      groupNodes.forEach(node => {
+        // Find everything this node uses directly (first level)
+        const usesEdges = state.edges.filter(e => e.source === node.id && (e.type === 'uses' || e.type === 'child-route' || e.type === 'route' || e.type === 'lazy-load'));
+        const childrenIds = new Set(usesEdges.map(e => e.target));
+        const childrenNodes = state.nodes.filter(n => childrenIds.has(n.id) && vis.has(n.id));
 
-      let warningsHtml = '';
-      if (node.type === 'guard') {
-        const usedGuard = state.edges.some(e => e.guards && e.guards.includes(node.label));
-        if (!usedGuard) {
-          warningsHtml += `<span style="color: #F97316; margin-left: 4px;">⚠ Unused Guard</span>`;
+        // Sort children by type for nicer display
+        childrenNodes.sort((a, b) => a.type.localeCompare(b.type));
+
+        let chipsHtml = '';
+        if (childrenNodes.length === 0) {
+          chipsHtml = '<div class="cv-empty">No dependencies</div>';
+        } else {
+          childrenNodes.forEach(child => {
+            const cColor = COLORS[child.type] || COLORS.component;
+            const chipOpacity = hasFocus ? (focusedNodes.has(child.id) ? '1' : DIM) : '1';
+            chipsHtml += `<div class="cv-chip" style="border-color:${cColor.border}; opacity:${chipOpacity}; transition:opacity 0.2s" onclick="selectNode('${child.id}')"><svg width="12" height="12" style="fill: ${cColor.border}; flex-shrink: 0;"><use href="#icon-angular"></use></svg>${escHtml(child.label)}</div>`;
+          });
         }
-      } else if (node.type !== 'root' && node.selector !== 'app-root' && !targetedIds.has(node.id)) {
-        warningsHtml += `<span style="color: #F97316; margin-left: 4px;">⚠ Unused ${TYPE_LABELS[node.type] || node.type}</span>`;
-      }
 
-      if (node.hasCircularDep) {
-        warningsHtml += `<span style="color: #EF4444; margin-left: 4px;">⚠ Circular dependency</span>`;
-      }
+        const color = COLORS[node.type] || COLORS.component;
+        const svgIcon = `<svg width="18" height="18" style="fill: ${color.border}; flex-shrink: 0;"><use href="#icon-angular"></use></svg>`;
+        const titleWithIcon = `<div style="display:flex;align-items:center;gap:6px;">${svgIcon}<span>${escHtml(node.label)}</span></div>`;
+        const subtitleContent = node.selector ? escHtml(node.selector) : (TYPE_LABELS[node.type] || node.type);
+        const nodeOpacity = hasFocus ? (focusedNodes.has(node.id) ? '1' : DIM) : '1';
 
-      const outlineStyle = (node.id === state.selected) ? 'outline: 2px solid var(--accent); outline-offset: 2px;' : '';
+        let warningsHtml = '';
+        if (node.type === 'guard') {
+          const usedGuard = state.edges.some(e => e.guards && e.guards.includes(node.label));
+          if (!usedGuard) {
+            warningsHtml += `<span style="color: #F97316; margin-left: 4px;">⚠ Unused Guard</span>`;
+          }
+        } else if (node.type !== 'root' && node.selector !== 'app-root' && !targetedIds.has(node.id)) {
+          warningsHtml += `<span style="color: #F97316; margin-left: 4px;">⚠ Unused ${TYPE_LABELS[node.type] || node.type}</span>`;
+        }
 
-      html += `
-      <div class="cv-card" style="border: 1px solid ${color.border}; opacity: ${nodeOpacity}; transition: opacity 0.2s; ${outlineStyle}">
-        <div class="cv-card-header" style="cursor:pointer;" onclick="selectNode('${node.id}')">
-          <div style="width: 100%;">
-            <div class="cv-card-title">${titleWithIcon}</div>
-            <div class="cv-card-subtitle" style="margin-top:4px;">${subtitleContent} ${warningsHtml ? warningsHtml : ''}</div>
+        if (node.hasCircularDep) {
+          warningsHtml += `<span style="color: #EF4444; margin-left: 4px;">⚠ Circular dependency</span>`;
+        }
+
+        const outlineStyle = (node.id === state.selected) ? 'outline: 2px solid var(--accent); outline-offset: 2px;' : '';
+
+        html += `
+        <div class="cv-card" style="border: 1px solid ${color.border}; opacity: ${nodeOpacity}; transition: opacity 0.2s; ${outlineStyle}">
+          <div class="cv-card-header" style="cursor:pointer;" onclick="selectNode('${node.id}')">
+            <div style="width: 100%;">
+              <div class="cv-card-title">${titleWithIcon}</div>
+              <div class="cv-card-subtitle" style="margin-top:4px;">${subtitleContent} ${warningsHtml ? warningsHtml : ''}</div>
+            </div>
           </div>
+          <div class="cv-chips">${chipsHtml}</div>
         </div>
-        <div class="cv-chips">${chipsHtml}</div>
-      </div>
-    `;
+        `;
+      });
+      html += `</div></div>`;
     });
 
     containmentLayer.innerHTML = html;
