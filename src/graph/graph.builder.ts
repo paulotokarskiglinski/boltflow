@@ -99,6 +99,19 @@ export function buildGraph(result: AnalysisResult, projectName: string): FlowGra
     });
   }
 
+  // 4c. Create nodes for interceptors
+  for (const interceptor of (result.interceptors ?? [])) {
+    nodeMap.set(interceptor.id, {
+      id: interceptor.id,
+      label: interceptor.name,
+      type: 'interceptor',
+      filePath: interceptor.filePath,
+      isUsed: interceptor.isUsed,
+      x: 0,
+      y: 0,
+    });
+  }
+
   // 5. Inject routes from lazy-loaded files into their parent lazy route entries,
   //    then attach route paths (full /parent/child paths) to component nodes.
   const processedRoutes = injectLazyChildRoutes(result.routes);
@@ -119,6 +132,8 @@ export function buildGraph(result: AnalysisResult, projectName: string): FlowGra
   // 9. Build "uses" edges from components to their injected services,
   //    and service-to-service "uses" edges
   buildServiceEdges(result.components, result.services ?? [], nodeMap, edges);
+
+  buildInterceptorEdges(result.interceptors ?? [], result.services ?? [], nodeMap, edges);
 
   // 9b. Build "uses" edges for components dynamically instantiated via service calls
   //     or functional guards (e.g. dialog.open(MyComponent), vcr.createComponent(MyComponent))
@@ -543,6 +558,23 @@ function buildServiceEdges(
   }
 }
 
+function buildInterceptorEdges(
+  interceptors: import('../types').InterceptorInfo[],
+  services: ServiceInfo[],
+  nodeMap: Map<string, GraphNode>,
+  edges: GraphEdge[]
+): void {
+  const serviceByName = new Map(services.map(s => [s.name, s.id]));
+  for (const interceptor of interceptors) {
+    if (!nodeMap.has(interceptor.id)) continue;
+    for (const depName of (interceptor.injectedServices ?? [])) {
+      const targetId = serviceByName.get(depName);
+      if (!targetId || !nodeMap.has(targetId)) continue;
+      edges.push({ id: edgeId(), source: interceptor.id, target: targetId, type: 'uses' });
+    }
+  }
+}
+
 /**
  * Emit "uses" edges from any class or function (service, component, or functional
  * guard) that dynamically instantiates a component via patterns like
@@ -813,7 +845,7 @@ function computeLayout(nodes: GraphNode[], edges: GraphEdge[]): void {
 
   // ── Shared nodes: 4 separate vertical columns, one per type ─────────────
   if (sharedNodes.length > 0) {
-    const sharedGroupOrder: NodeType[] = ['component', 'service', 'directive', 'pipe', 'guard'];
+    const sharedGroupOrder: NodeType[] = ['component', 'service', 'directive', 'pipe', 'guard', 'interceptor'];
 
     // Y: below the bottom of the flow zone
     const maxFlowY = flowNodes.length
