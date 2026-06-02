@@ -165,7 +165,7 @@ function buildLegend() {
     { label:'Uses',        color:'#94A3B8', dash:false },
     { label:'Route',       color:'#3B82F6', dash:true },
     { label:'Child route', color:'#60A5FA', dash:true },
-    { label:'Lazy load',   color:'#43A047', dash:true },
+    { label:'Lazy load',   color:'#64748b', dash:true },
     { label:'Navigate',    color:'#EC4899', dash:true },
   ];
   let html = '<div style="font-size:.7rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Legend</div>';
