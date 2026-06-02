@@ -15,6 +15,7 @@ import { detectServices, detectServiceUsages, detectServiceToServiceUsages, dete
 import { detectDirectives } from './directive.detector';
 import { detectPipes } from './pipe.detector';
 import { detectGuards } from './guard.detector';
+import { detectInterceptors } from './interceptor.detector';
 
 export class AngularAnalyzer implements IAnalyzer {
   async detect(projectPath: string): Promise<boolean> {
@@ -67,6 +68,9 @@ export class AngularAnalyzer implements IAnalyzer {
     progress('Detecting guards…');
     const guards = detectGuards(project, projectPath);
 
+    progress('Detecting interceptors…');
+    const interceptors = detectInterceptors(project, projectPath, services);
+
     progress('Collecting inline templates…');
     const inlineTemplates = collectInlineTemplates(project, components);
 
@@ -110,6 +114,7 @@ export class AngularAnalyzer implements IAnalyzer {
       directives,
       pipes,
       guards,
+      interceptors,
     };
   }
 }

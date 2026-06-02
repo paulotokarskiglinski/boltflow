@@ -15,6 +15,7 @@
     directive: { bg: '#AB47BC', border: '#AB47BC', text: '#fafafa' },
     pipe: { bg: '#00897B', border: '#00897B', text: '#fafafa' },
     guard: { bg: '#43A047', border: '#43A047', text: '#fafafa' },
+    interceptor: { bg: '#FF9800', border: '#FF9800', text: '#fafafa' },
   };
   const ROOT_ICON = '⚡';
   const EDGE_COLOR = { uses: '#94A3B8', route: '#3B82F6', 'child-route': '#60A5FA', 'lazy-load': '#64748b', navigate: '#EC4899' };
@@ -33,7 +34,7 @@
     panning: false, panStart: null,
     hasPanned: false,
     dragging: null, dragOffset: null,
-    activeFilters: new Set(['root', 'component', 'module', 'route', 'service', 'directive', 'pipe', 'guard']),
+    activeFilters: new Set(['root', 'component', 'module', 'route', 'service', 'directive', 'pipe', 'guard', 'interceptor']),
     searchTerm: '',
     routing: 'ortho',
     showLanes: true,
@@ -127,7 +128,10 @@
   // ════════════════════════════════════════════════════════════════════════════
   // FILTERS
   // ════════════════════════════════════════════════════════════════════════════
-  const TYPE_LABELS = { root: 'Root', component: 'Component', module: 'Module', route: 'Route', service: 'Service', directive: 'Directive', pipe: 'Pipe', guard: 'Guard' };
+  const TYPE_LABELS = { root: 'Root', component: 'Component', module: 'Module', route: 'Route', service: 'Service', directive: 'Directive', pipe: 'Pipe',
+    guard: 'Guard',
+    interceptor: 'Interceptor',
+  };
   function buildFilters() {
     const types = [...new Set(GRAPH.nodes.map(n => n.type))];
     types.forEach(type => {
@@ -164,6 +168,7 @@
       { label: 'Directive', color: '#ab47bc' },
       { label: 'Pipe', color: '#00897b' },
       { label: 'Guard', color: '#43A047' },
+      { label: 'Interceptor', color: '#FF9800' },
     ];
     const edgeTypes = [
       { label: 'Uses', color: '#94A3B8', dash: false },
@@ -277,6 +282,8 @@
 
     const guardVis = state.nodes.filter(n => vis.has(n.id) && n.type === 'guard');
     if (state.showLanes) drawZone(guardVis, 'GUARDS', 'rgba(67, 160, 71, 0.05)', 'rgb(67, 160, 71)');
+    const interceptorVis = state.nodes.filter(n => vis.has(n.id) && n.type === 'interceptor');
+    if (state.showLanes) drawZone(interceptorVis, 'INTERCEPTORS', 'rgba(255, 152, 0, 0.05)', 'rgb(255, 152, 0)');
 
     // ── Focus set: selected node + its direct neighbours via any edge ────────────
     // Nodes/edges outside this set are dimmed when something is selected.
@@ -484,23 +491,18 @@
 
       // Unused warning — shown when no other node has an edge pointing to this node
       // Guard nodes use a different check: whether any route edge references them by name.
+      let hasWarning = false;
       let extraLabelCount = 0;
       if (node.type === 'guard') {
-        const isUsedGuard = state.edges.some(e => e.guards && e.guards.includes(node.label));
-        if (!isUsedGuard) {
-          const warnY = node.selector ? 56 : 42;
-          const warn = svgEl('text');
-          warn.setAttribute('x', 8);
-          warn.setAttribute('y', warnY);
-          warn.setAttribute('font-size', '12');
-          warn.setAttribute('fill', '#F97316');
-          warn.setAttribute('pointer-events', 'none');
-          warn.textContent = '⚠ Unused Guard';
-          g.appendChild(warn);
-          extraLabelCount++;
-        }
+        const usedGuard = state.edges.some(e => e.guards && e.guards.includes(node.label));
+        if (!usedGuard) hasWarning = true;
+      } else if (node.type === 'interceptor') {
+        if (!node.isUsed) hasWarning = true;
       } else if (node.type !== 'root' && node.selector !== 'app-root' && !targetedIds.has(node.id)) {
-        const warnY = (node.route || node.selector) ? 56 : 42;
+        hasWarning = true;
+      }
+      if (hasWarning) {
+        const warnY = (node.type === 'guard' && node.selector) || (node.route) ? 56 : 42;
         const warn = svgEl('text');
         warn.setAttribute('x', 8);
         warn.setAttribute('y', warnY);
@@ -574,7 +576,8 @@
       { title: 'Services', types: ['service'] },
       { title: 'Directives', types: ['directive'] },
       { title: 'Pipes', types: ['pipe'] },
-      { title: 'Guards', types: ['guard'] }
+      { title: 'Guards', types: ['guard'] },
+      { title: 'Interceptors', types: ['interceptor'] }
     ];
 
     // For Containment View, we group nodes by type
@@ -617,6 +620,10 @@
           const usedGuard = state.edges.some(e => e.guards && e.guards.includes(node.label));
           if (!usedGuard) {
             warningsHtml += `<span style="color: #F97316; margin-left: 4px;">⚠ Unused Guard</span>`;
+          }
+        } else if (node.type === 'interceptor') {
+          if (!node.isUsed) {
+            warningsHtml += `<span style="color: #F97316; margin-left: 4px;">⚠ Unused Interceptor</span>`;
           }
         } else if (node.type !== 'root' && node.selector !== 'app-root' && !targetedIds.has(node.id)) {
           warningsHtml += `<span style="color: #F97316; margin-left: 4px;">⚠ Unused ${TYPE_LABELS[node.type] || node.type}</span>`;

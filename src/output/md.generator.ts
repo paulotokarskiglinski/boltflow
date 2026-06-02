@@ -11,6 +11,7 @@ function nodeShape(node: GraphNode): string {
     case 'guard':      return `{${lbl}}`;
     case 'directive':  return `[/${lbl}\\]`;
     case 'pipe':       return `[\\${lbl}/]`;
+    case 'interceptor':return `([${lbl}])`;
     case 'component':
     default:           return `[${lbl}]`;
   }
@@ -32,6 +33,7 @@ const CLASS_DEFS: Record<NodeType, string> = {
   guard:     'classDef guardStyle     fill:#43A047,stroke:#2E7D32,color:#fff',
   directive: 'classDef directiveStyle fill:#AB47BC,stroke:#7B1FA2,color:#fff',
   pipe:      'classDef pipeStyle      fill:#00897B,stroke:#00695C,color:#fff',
+  interceptor: 'classDef interceptorStyle fill:#FF9800,stroke:#F57C00,color:#fff',
 };
 
 const CLASS_NAME: Record<NodeType, string> = {
@@ -43,6 +45,7 @@ const CLASS_NAME: Record<NodeType, string> = {
   guard:     'guardStyle',
   directive: 'directiveStyle',
   pipe:      'pipeStyle',
+  interceptor: 'interceptorStyle',
 };
 
 function edgeArrow(type: EdgeType): string {

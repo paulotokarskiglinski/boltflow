@@ -30,6 +30,8 @@
   --c-guard-b: #43A047;
   --c-pipe: #00897b;
   --c-pipe-b: #00897b;
+  --c-interceptor: #FF9800;
+  --c-interceptor-b: #FF9800;
   --e-uses: #94A3B8;
   --e-route: #3B82F6;
   --e-child: #60A5FA;
@@ -208,6 +210,10 @@ header {
   border-color: var(--c-route)
 }
 
+.filter-chip[data-type="interceptor"].active {
+  background: var(--c-interceptor);
+  border-color: var(--c-interceptor)
+}
 
 .comp-list {
   flex: 1;
@@ -538,9 +544,11 @@ body.light .view-toggle button:hover {
 .cv-group {
   margin-bottom: 32px;
 }
+
 .cv-group:last-child {
   margin-bottom: 0;
 }
+
 .cv-group-title {
   font-size: 1.05rem;
   font-weight: 600;

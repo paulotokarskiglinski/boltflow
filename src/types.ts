@@ -103,6 +103,14 @@ export interface GuardInfo {
   interfaces: string[];
 }
 
+export interface InterceptorInfo {
+  id: string;
+  name: string;
+  filePath: string;
+  isUsed: boolean;
+  injectedServices?: string[];
+}
+
 export interface AnalysisResult {
   framework: Framework;
   projectRoot: string;
@@ -113,11 +121,12 @@ export interface AnalysisResult {
   directives: DirectiveInfo[];
   pipes: PipeInfo[];
   guards: GuardInfo[];
+  interceptors: InterceptorInfo[];
 }
 
 // ─── Graph model ─────────────────────────────────────────────────────────────
 
-export type NodeType = 'root' | 'component' | 'module' | 'route' | 'service' | 'directive' | 'pipe' | 'guard';
+export type NodeType = 'root' | 'component' | 'module' | 'route' | 'service' | 'directive' | 'pipe' | 'guard' | 'interceptor';
 
 export interface GraphNode {
   id: string;
@@ -131,8 +140,10 @@ export interface GraphNode {
   isStandalone?: boolean;
   /** Angular lifecycle hooks implemented (e.g. OnInit, OnDestroy) */
   lifecycleHooks?: string[];
+  /** For nodes like interceptors that might not have incoming edges but can still be used. */
+  isUsed?: boolean;
   /** Layout lane: 'flow' = routed hierarchy, 'shared' = reusable components */
-  lane?: 'flow' | 'shared';
+  lane?: 'flow' | 'shared' | 'guard' | 'interceptor';
   /** Pre-computed layout position (pixels) */
   x: number;
   y: number;
@@ -194,6 +205,7 @@ export interface BoltflowResult {
   totalPipes?: number;
   totalRoutes?: number;
   totalGuards?: number;
+  totalInterceptors?: number;
   totalModules?: number;
   graph: FlowGraph;
 }
