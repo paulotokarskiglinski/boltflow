@@ -502,7 +502,7 @@
         hasWarning = true;
       }
       if (hasWarning) {
-        const warnY = (node.type === 'guard' && node.selector) || (node.route) ? 56 : 42;
+        const warnY = (node.route || node.selector) ? 56 : 42;
         const warn = svgEl('text');
         warn.setAttribute('x', 8);
         warn.setAttribute('y', warnY);
