@@ -10,3 +10,7 @@ Thumbs.db
 coverage/
 .nyc_output/
 demo-app/
+demo-app-21-v3/
+demo-app-ng14/
+boltflow-output.*
+PUBLISHING.md

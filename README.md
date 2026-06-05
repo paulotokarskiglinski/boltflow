@@ -4,7 +4,8 @@
 
 > Currently supports **Angular**.
 
-![Boltflow screenshot](img/screenshot.jpg)
+![Boltflow screenshot](img/screenshot1.png)
+![Boltflow screenshot](img/screenshot2.png)
 
 ## Installation
 
